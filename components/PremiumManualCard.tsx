@@ -284,6 +284,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 2,
   },
 });
