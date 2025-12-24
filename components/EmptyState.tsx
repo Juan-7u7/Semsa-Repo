@@ -1,7 +1,8 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
 
 interface EmptyStateProps {
   onClearFilters?: () => void;
@@ -11,144 +12,167 @@ interface EmptyStateProps {
   icon?: React.ComponentProps<typeof FontAwesome>['name'];
 }
 
-/**
- * Componente de estado vacío para cuando no hay resultados
- * Muestra un icono triste, mensaje y botón para limpiar filtros
- * 
- * @param onClearFilters - Callback para limpiar filtros
- * @param showClearButton - Mostrar botón de limpiar filtros
- * @param title - Título personalizado
- * @param message - Mensaje personalizado
- * @param icon - Icono personalizado
- * 
- * @example
- * ```tsx
- * <EmptyState
- *   onClearFilters={() => {
- *     setSearchQuery('');
- *     setMarcaFiltro(null);
- *     setTipoFiltro(null);
- *   }}
- *   showClearButton={true}
- * />
- * ```
- */
 export default function EmptyState({
   onClearFilters,
   showClearButton = true,
   title = 'No se encontraron resultados',
-  message = 'Intenta ajustar los filtros o la búsqueda para encontrar lo que necesitas',
-  icon = 'frown-o',
+  message = 'Intenta ajustar tu búsqueda para encontrar lo que necesitas',
+  icon = 'search',
 }: EmptyStateProps) {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
 
   return (
-    <View className="items-center justify-center py-20 px-8">
-      {/* Icono triste */}
-      <View
-        style={{ backgroundColor: colors.backgroundSecondary }}
-        className="w-32 h-32 rounded-full items-center justify-center mb-6"
-      >
-        <FontAwesome name={icon} size={64} color={colors.textMuted} />
+    <Animated.View 
+      entering={FadeInUp.springify()}
+      style={styles.container}
+    >
+      {/* Icono Principal */}
+      <View style={[styles.iconWrapper, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+        <FontAwesome name={icon} size={40} color={colors.textMuted} />
+        {icon === 'search' && (
+          <View style={[styles.badge, { backgroundColor: colors.background, borderColor: colors.backgroundSecondary }]}>
+            <FontAwesome name="times" size={10} color={colors.textSecondary} />
+          </View>
+        )}
       </View>
 
-      {/* Título */}
-      <Text
-        style={{ color: colors.text }}
-        className="text-2xl font-bold mb-3 text-center"
-      >
+      {/* Textos */}
+      <Text style={[styles.title, { color: colors.text }]}>
         {title}
       </Text>
-
-      {/* Mensaje */}
-      <Text
-        style={{ color: colors.textSecondary }}
-        className="text-base text-center mb-6 px-4 leading-6"
-      >
+      <Text style={[styles.message, { color: colors.textSecondary }]}>
         {message}
       </Text>
 
-      {/* Sugerencias */}
-      <View
-        style={{
-          backgroundColor: colors.primary + '15',
-          borderColor: colors.primary + '30',
-        }}
-        className="p-4 rounded-xl border mb-6 w-full max-w-sm"
-      >
-        <View className="flex-row items-center mb-3">
-          <FontAwesome
-            name="lightbulb-o"
-            size={20}
-            color={colors.primary}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={{ color: colors.text }} className="font-bold">
-            Sugerencias:
-          </Text>
+      {/* Sugerencias (Diseño Integrado) */}
+      <View style={[
+        styles.suggestionsCard, 
+        { 
+          borderColor: colors.border,
+          backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'
+        }
+      ]}>
+        <View style={styles.suggestionHeader}>
+          <FontAwesome name="lightbulb-o" size={14} color={colors.primary} />
+          <Text style={[styles.suggestionTitle, { color: colors.text }]}>Tips de búsqueda:</Text>
         </View>
-
-        <View className="space-y-2">
-          <View className="flex-row items-start mb-2">
-            <Text style={{ color: colors.primary }} className="mr-2">
-              •
-            </Text>
-            <Text style={{ color: colors.textSecondary }} className="flex-1 text-sm">
-              Verifica la ortografía de tu búsqueda
-            </Text>
-          </View>
-
-          <View className="flex-row items-start mb-2">
-            <Text style={{ color: colors.primary }} className="mr-2">
-              •
-            </Text>
-            <Text style={{ color: colors.textSecondary }} className="flex-1 text-sm">
-              Intenta con términos más generales
-            </Text>
-          </View>
-
-          <View className="flex-row items-start mb-2">
-            <Text style={{ color: colors.primary }} className="mr-2">
-              •
-            </Text>
-            <Text style={{ color: colors.textSecondary }} className="flex-1 text-sm">
-              Prueba con diferentes filtros
-            </Text>
-          </View>
-
-          <View className="flex-row items-start">
-            <Text style={{ color: colors.primary }} className="mr-2">
-              •
-            </Text>
-            <Text style={{ color: colors.textSecondary }} className="flex-1 text-sm">
-              Limpia los filtros para ver todos los manuales
-            </Text>
-          </View>
+        
+        <View style={styles.suggestionItem}>
+          <FontAwesome name="check" size={10} color={colors.primary} style={styles.checkIcon} />
+          <Text style={[styles.suggestionText, { color: colors.textSecondary }]}>Revisa la ortografía</Text>
+        </View>
+        <View style={styles.suggestionItem}>
+          <FontAwesome name="check" size={10} color={colors.primary} style={styles.checkIcon} />
+          <Text style={[styles.suggestionText, { color: colors.textSecondary }]}>Usa términos más generales</Text>
+        </View>
+        <View style={styles.suggestionItem}>
+          <FontAwesome name="check" size={10} color={colors.primary} style={styles.checkIcon} />
+          <Text style={[styles.suggestionText, { color: colors.textSecondary }]}>Prueba eliminando algunos filtros</Text>
         </View>
       </View>
 
-      {/* Botón para limpiar filtros */}
+      {/* Botón de Acción */}
       {showClearButton && onClearFilters && (
         <TouchableOpacity
           onPress={onClearFilters}
-          style={{ backgroundColor: colors.primary }}
-          className="flex-row items-center px-8 py-4 rounded-full shadow-lg"
+          style={[styles.button, { backgroundColor: colors.primary }]}
           activeOpacity={0.8}
         >
-          <FontAwesome name="refresh" size={18} color="#FFFFFF" style={{ marginRight: 10 }} />
-          <Text className="text-white text-base font-bold">Limpiar Filtros</Text>
+          <Text style={styles.buttonText}>Limpiar filtros</Text>
+          <FontAwesome name="refresh" size={12} color="#000000" />
         </TouchableOpacity>
       )}
-
-      {/* Mensaje adicional */}
-      {showClearButton && onClearFilters && (
-        <Text
-          style={{ color: colors.textMuted }}
-          className="text-xs text-center mt-4"
-        >
-          Esto eliminará todos los filtros y búsquedas activas
-        </Text>
-      )}
-    </View>
+    </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+    width: '100%',
+  },
+  iconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  badge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: -0.5,
+  },
+  message: {
+    fontSize: 15,
+    textAlign: 'center',
+    maxWidth: 280,
+    marginBottom: 28,
+    lineHeight: 22,
+  },
+  suggestionsCard: {
+    width: '100%',
+    maxWidth: 300,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 28,
+  },
+  suggestionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  suggestionTitle: {
+    fontWeight: '600',
+    fontSize: 13,
+  },
+  suggestionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  checkIcon: {
+    marginRight: 10,
+    opacity: 0.8,
+  },
+  suggestionText: {
+    fontSize: 13,
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  buttonText: {
+    color: '#000000',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+});
