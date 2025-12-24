@@ -1,6 +1,6 @@
 import { Colors, ColorScheme, ThemeColors } from '@/constants/Colors';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { useColorScheme as useDeviceColorScheme } from 'react-native';
+import { Appearance, Platform, useColorScheme as useDeviceColorScheme } from 'react-native';
 
 /**
  * Tipo para el contexto del tema
@@ -37,7 +37,16 @@ interface ThemeProviderProps {
  */
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const deviceColorScheme = useDeviceColorScheme();
-  const [colorScheme, setColorScheme] = useState<ColorScheme>(deviceColorScheme ?? 'light');
+  
+  // Inicialización síncrona para evitar flash en web
+  const [colorScheme, setColorScheme] = useState<ColorScheme>(() => {
+    // En Web, verificar directamente el media query antes del primer render
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    // En nativo o fallback
+    return Appearance.getColorScheme() ?? 'light';
+  });
 
   // Sincronizar con el tema del dispositivo
   useEffect(() => {
