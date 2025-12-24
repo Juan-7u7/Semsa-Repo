@@ -1,5 +1,5 @@
-import { type MarcaManual, type TipoManual } from '@/constants/Manuales';
 import { useTheme } from '@/contexts/ThemeContext';
+import { type MarcaManual, type TipoManual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useState } from 'react';
 import { ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';

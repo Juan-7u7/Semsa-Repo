@@ -1,6 +1,6 @@
-import { type Manual } from '@/constants/Manuales';
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Manual } from '@/types/manual';
 import { ANIMATION_CONFIG } from '@/utils/responsive';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useEffect } from 'react';
