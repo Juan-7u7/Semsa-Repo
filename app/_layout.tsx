@@ -48,12 +48,44 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
+import { StatusBar } from 'expo-status-bar';
+
 // Componente intermedio para conectar el tema personalizado con la navegación
 function NavigationWrapper() {
-  const { colorScheme } = useTheme();
+  const { colorScheme, colors } = useTheme();
+
+  // Crear temas de navegación personalizados sincronizados con nuestros colores
+  const navigationTheme = colorScheme === 'dark' ? {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.card || '#1F2937', // Fallback seguro
+      text: colors.text,
+      border: colors.border,
+      notification: colors.primary,
+    },
+  } : {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.card || '#FFFFFF',
+      text: colors.text,
+      border: colors.border,
+      notification: colors.primary,
+    },
+  };
   
   return (
-    <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <NavigationThemeProvider value={navigationTheme}>
+      <StatusBar 
+        style={colorScheme === 'dark' ? 'light' : 'dark'} 
+        backgroundColor={colors.background}
+        translucent={false} // Evita que se superpongas en algunos casos de Android
+      />
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
