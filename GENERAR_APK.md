@@ -1,151 +1,239 @@
-# 📱 Guía para Generar APK de Marian
+# 📱 Guía Completa para Generar APK con EAS Build
 
-## ✅ Archivos Preparados
+## ✅ Estado Actual
 
-He configurado todo lo necesario para generar el APK:
+- ✅ Proyecto listo y subido a GitHub
+- ✅ EAS CLI instalado globalmente
+- ✅ Configuración `eas.json` creada
+- ✅ Flecha de tarjeta ajustada
 
-1. ✅ **app.json** - Configurado con información de la app
-2. ✅ **eas.json** - Configuración de build
-3. ✅ **Export completado** - Archivos listos en carpeta `dist`
+---
 
-## 🚀 Opciones para Generar el APK
+## 🚀 Pasos para Generar el APK
 
-### Opción 1: Usando EAS Build (Recomendado)
+### Paso 1: Crear Cuenta en Expo (Si no tienes)
 
-EAS Build es el servicio oficial de Expo para compilar apps.
+1. Ve a [expo.dev](https://expo.dev)
+2. Click en "Sign Up"
+3. Crea tu cuenta (puedes usar GitHub)
 
-#### Pasos:
+### Paso 2: Login en EAS CLI
 
-1. **Instalar EAS CLI** (si no lo tienes):
-
-```bash
-npm install -g eas-cli
-```
-
-2. **Iniciar sesión en Expo**:
+Abre tu terminal y ejecuta:
 
 ```bash
 eas login
 ```
 
-3. **Configurar el proyecto**:
+Te pedirá:
+
+- **Email**: Tu email de Expo
+- **Password**: Tu contraseña
+
+### Paso 3: Configurar el Proyecto
 
 ```bash
+cd c:\Users\nangv\Desktop\Marian
 eas build:configure
 ```
 
-4. **Generar el APK**:
+Esto creará/actualizará:
+
+- `eas.json` (ya existe)
+- `app.json` con el Project ID correcto
+
+### Paso 4: Iniciar el Build
 
 ```bash
 eas build --platform android --profile preview
 ```
 
-5. **Esperar** - El build se hace en la nube (5-15 minutos)
+**Opciones que te preguntará:**
 
-6. **Descargar** - Recibirás un link para descargar el APK
+1. **"Would you like to automatically create an EAS project for @[tu-usuario]/Marian?"**
 
-#### Ventajas:
+   - Responde: `Y` (Yes)
 
-- ✅ No necesitas Android Studio
-- ✅ Build en la nube
-- ✅ Fácil y rápido
-- ✅ Gratis para builds ilimitados
+2. **"Generate a new Android Keystore?"**
+   - Responde: `Y` (Yes)
+
+### Paso 5: Esperar el Build
+
+El build se ejecuta en la nube:
+
+- ⏱️ **Tiempo estimado**: 10-15 minutos
+- 📊 **Progreso**: Verás el progreso en la terminal
+- 🔗 **URL**: Te dará un link para ver el build en expo.dev
+
+### Paso 6: Descargar el APK
+
+Una vez completado:
+
+1. Verás un mensaje: **"Build finished"**
+2. Te dará un **link de descarga**
+3. Click en el link o ve a [expo.dev/accounts/[tu-usuario]/projects/marian/builds](https://expo.dev)
+4. Descarga el APK
 
 ---
 
-### Opción 2: Build Local con Expo (Más Rápido)
-
-Si tienes Android Studio instalado:
-
-1. **Instalar dependencias de Android**:
-
-   - Android Studio
-   - Android SDK
-   - Java JDK
-
-2. **Generar APK local**:
+## 📋 Comandos Completos
 
 ```bash
-npx expo run:android --variant release
-```
+# 1. Login
+eas login
 
-3. **El APK estará en**:
+# 2. Ir al proyecto
+cd c:\Users\nangv\Desktop\Marian
 
-```
-android/app/build/outputs/apk/release/app-release.apk
+# 3. Configurar (si es necesario)
+eas build:configure
+
+# 4. Build para Android (APK)
+eas build --platform android --profile preview
+
+# 5. Ver builds
+eas build:list
 ```
 
 ---
 
-### Opción 3: Usando Expo Go (Para Pruebas)
+## ⚙️ Perfiles de Build
 
-Si solo quieres probar la app sin generar APK:
+En `eas.json` tenemos 3 perfiles:
 
-1. **Iniciar el servidor**:
+### 1. **preview** (Recomendado para ti)
 
 ```bash
-npm start
+eas build --platform android --profile preview
 ```
 
-2. **Escanear QR** con la app Expo Go en tu teléfono
+- Genera APK (fácil de instalar)
+- Para testing y distribución interna
 
-3. **La app se carga** directamente en Expo Go
+### 2. **production**
+
+```bash
+eas build --platform android --profile production
+```
+
+- Genera APK optimizado
+- Para distribución final
+
+### 3. **development**
+
+```bash
+eas build --platform android --profile development
+```
+
+- Para desarrollo con Expo Dev Client
 
 ---
 
-## 📦 Información del APK
+## 🔧 Solución de Problemas
+
+### Error: "Invalid UUID appId"
+
+**Solución**: Necesitas hacer login primero
+
+```bash
+eas login
+```
+
+### Error: "No Expo account found"
+
+**Solución**: Crea una cuenta en expo.dev
+
+### Error: "Build failed"
+
+**Solución**: Revisa los logs en expo.dev
+
+### Error: "Keystore not found"
+
+**Solución**: Deja que EAS genere uno automáticamente (responde Y)
+
+---
+
+## 📱 Instalar el APK en tu Dispositivo
+
+### Método 1: Descarga Directa
+
+1. Abre el link del build en tu teléfono
+2. Descarga el APK
+3. Instala (habilita "Fuentes desconocidas" si es necesario)
+
+### Método 2: Transferencia
+
+1. Descarga el APK en tu PC
+2. Transfiere a tu teléfono (USB, email, etc.)
+3. Abre el archivo APK
+4. Instala
+
+---
+
+## 🎯 Ejemplo de Sesión Completa
+
+```bash
+# Terminal
+C:\Users\nangv\Desktop\Marian> eas login
+✔ Email: tu-email@example.com
+✔ Password: ********
+✔ Logged in as tu-usuario
+
+C:\Users\nangv\Desktop\Marian> eas build --platform android --profile preview
+✔ Would you like to automatically create an EAS project? … yes
+✔ Generate a new Android Keystore? … yes
+
+Building...
+⠋ Uploading to EAS Build
+⠋ Starting build
+⠋ Running build
+
+Build finished!
+Download: https://expo.dev/accounts/tu-usuario/projects/marian/builds/abc123
+```
+
+---
+
+## 📊 Información del Build
 
 - **Nombre**: Marian - Catálogo de Manuales
 - **Package**: com.marian.app
 - **Versión**: 1.0.0
-- **Tamaño estimado**: ~30-40 MB
+- **Tamaño**: ~30-40 MB
 - **Plataforma**: Android 5.0+
 
 ---
 
-## 🎯 Recomendación
+## 🔗 Enlaces Útiles
 
-**Para generar el APK final**, te recomiendo usar **EAS Build (Opción 1)**:
-
-```bash
-# 1. Instalar EAS CLI
-npm install -g eas-cli
-
-# 2. Login
-eas login
-
-# 3. Generar APK
-eas build --platform android --profile preview
-```
-
-Esto generará un APK profesional listo para instalar en cualquier dispositivo Android.
+- **Expo Dashboard**: https://expo.dev
+- **EAS Build Docs**: https://docs.expo.dev/build/introduction/
+- **Tu Proyecto GitHub**: https://github.com/Juan-7u7/Marian
 
 ---
 
-## 📱 Instalar el APK
+## ✅ Checklist
 
-Una vez generado:
-
-1. **Transferir** el APK a tu teléfono Android
-2. **Habilitar** instalación de fuentes desconocidas
-3. **Tocar** el archivo APK
-4. **Instalar** la aplicación
-
----
-
-## ❓ Necesitas Ayuda?
-
-Si encuentras algún problema:
-
-1. Verifica que tienes Node.js instalado
-2. Asegúrate de tener conexión a internet
-3. Revisa que no haya errores en el código
+- [ ] Crear cuenta en Expo (si no tienes)
+- [ ] Ejecutar `eas login`
+- [ ] Ejecutar `eas build:configure`
+- [ ] Ejecutar `eas build --platform android --profile preview`
+- [ ] Esperar 10-15 minutos
+- [ ] Descargar APK
+- [ ] Instalar en dispositivo
+- [ ] ¡Disfrutar la app!
 
 ---
 
-## 🎉 ¡Listo!
+## 💡 Consejo
 
-Tu aplicación **Marian** está lista para ser compilada. Elige la opción que prefieras y genera tu APK.
+Si quieres ver el progreso del build en tiempo real:
 
-**Archivo de configuración creado**: `eas.json`
-**Archivos exportados**: Carpeta `dist/`
+1. Ve a https://expo.dev
+2. Login con tu cuenta
+3. Ve a "Projects" → "Marian" → "Builds"
+4. Verás el progreso en vivo
+
+---
+
+¡Tu APK estará listo en ~15 minutos! 🚀📱

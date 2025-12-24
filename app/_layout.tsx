@@ -7,9 +7,9 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import WebDownloadBanner from '@/components/WebDownloadBanner';
 import { FavoritosProvider } from '@/contexts/FavoritosContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
 export {
     // Catch any errors thrown by the Layout component.
@@ -48,19 +48,28 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+// Componente intermedio para conectar el tema personalizado con la navegación
+function NavigationWrapper() {
+  const { colorScheme } = useTheme();
+  
+  return (
+    <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="help" options={{ presentation: 'modal', headerShown: false }} />
+      </Stack>
+      {/* Banner de descarga solo visible en Web */}
+      <WebDownloadBanner />
+    </NavigationThemeProvider>
+  );
+}
 
+function RootLayoutNav() {
   return (
     <ThemeProvider>
       <FavoritosProvider>
-        <NavigationThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
-            <Stack.Screen name="help" options={{ presentation: 'modal', headerShown: false }} />
-          </Stack>
-        </NavigationThemeProvider>
+        <NavigationWrapper />
       </FavoritosProvider>
     </ThemeProvider>
   );

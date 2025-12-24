@@ -1,0 +1,194 @@
+import { useTheme } from '@/contexts/ThemeContext';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
+import React, { useState } from 'react';
+import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+
+/**
+ * Banner de descarga para Web
+ * Solo se muestra si la plataforma es WEB
+ */
+export default function WebDownloadBanner() {
+  const { colors, isDark } = useTheme();
+  const [visible, setVisible] = useState(true);
+  const { width } = useWindowDimensions();
+
+  // Si no es web o el usuario lo cerró, no renderizar nada
+  if (Platform.OS !== 'web' || !visible) return null;
+
+  const isSmallScreen = width < 768;
+
+  const handleDownload = () => {
+    // La ruta será relativa a la carpeta public
+    const apkUrl = '/apk/app-release.apk';
+    window.open(apkUrl, '_blank');
+  };
+
+  return (
+    <Animated.View 
+      entering={FadeInDown.delay(500).springify()}
+      exiting={FadeOutDown.springify()}
+      style={[
+        styles.container, 
+        isSmallScreen ? styles.containerSmall : styles.containerLarge,
+      ]}
+    >
+      <View style={[
+        styles.card,
+        { 
+          backgroundColor: isDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+          shadowColor: isDark ? '#000' : '#888',
+        }
+      ]}>
+        <View style={[
+          styles.content,
+          isSmallScreen && styles.contentSmall
+        ]}>
+          {/* Icono de Android */}
+          <View style={[
+            styles.iconContainer, 
+            { backgroundColor: isDark ? 'rgba(61, 220, 132, 0.15)' : 'rgba(61, 220, 132, 0.1)' }
+          ]}>
+            <FontAwesome name="android" size={isSmallScreen ? 24 : 28} color="#3DDC84" />
+          </View>
+
+          {/* Texto */}
+          <View style={[styles.textContainer, isSmallScreen && styles.textContainerSmall]}>
+            <Text style={[styles.title, { color: colors.text }]}>
+              {isSmallScreen ? 'Descarga la App' : 'Descarga la App para Android'}
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={2}>
+              {isSmallScreen 
+                ? 'Mejor experiencia nativa.' 
+                : 'Obtén la mejor experiencia con nuestra aplicación nativa.'}
+            </Text>
+          </View>
+
+          {/* Botones */}
+          <View style={[styles.actions, isSmallScreen && styles.actionsSmall]}>
+            <TouchableOpacity 
+              style={[
+                styles.downloadButton, 
+                { backgroundColor: colors.primary },
+                isSmallScreen && styles.downloadButtonSmall
+              ]}
+              onPress={handleDownload}
+              activeOpacity={0.8}
+            >
+              <FontAwesome name="download" size={14} color="#000000" style={{ marginRight: 8 }} />
+              <Text style={styles.downloadText}>APK</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.closeButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+              onPress={() => setVisible(false)}
+            >
+              <FontAwesome name="times" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  containerLarge: {
+    bottom: 32,
+    paddingHorizontal: 24,
+  },
+  containerSmall: {
+    bottom: 24,
+    paddingHorizontal: 16,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 800,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 12,
+    paddingHorizontal: 16,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 10,
+    // @ts-ignore
+    backdropFilter: 'blur(12px)', // Funciona en web para dar efecto frosted glass
+  },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  contentSmall: {
+    gap: 12,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textContainer: {
+    flex: 1,
+  },
+  textContainerSmall: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 2,
+    letterSpacing: -0.3,
+  },
+  subtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  actionsSmall: {
+    gap: 8,
+  },
+  downloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  downloadButtonSmall: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  downloadText: {
+    fontWeight: '700',
+    color: '#000000',
+    fontSize: 14,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

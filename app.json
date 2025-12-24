@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Marian - Catálogo de Manuales",
-    "slug": "marian",
+    "slug": "marian-manuals-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -40,8 +40,9 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "marian-manuals"
+        "projectId": "94b775ba-6c59-46af-9b8c-951f277f9861"
       }
     }
   }
