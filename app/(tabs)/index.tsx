@@ -1,44 +1,29 @@
 import EmptyState from '@/components/EmptyState';
 import PremiumHeader from '@/components/PremiumHeader';
 import PremiumManualCard from '@/components/PremiumManualCard';
-import {
-    buscarManualesPorTitulo,
-    obtenerTodosManuales,
-    type Manual,
-    type MarcaManual,
-    type TipoManual,
-} from '@/constants/Manuales';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useManuales } from '@/hooks/useManuales';
+import { type Manual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 export default function CatalogoScreen() {
   const { colors } = useTheme();
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [marcaFiltro, setMarcaFiltro] = useState<MarcaManual | null>(null);
-  const [tipoFiltro, setTipoFiltro] = useState<TipoManual | null>(null);
-
-  // Filtrar manuales
-  const manualesFiltrados = useMemo(() => {
-    let manuales = obtenerTodosManuales();
-
-    if (searchQuery.trim() !== '') {
-      manuales = buscarManualesPorTitulo(searchQuery);
-    }
-
-    if (marcaFiltro) {
-      manuales = manuales.filter((manual) => manual.marca === marcaFiltro);
-    }
-
-    if (tipoFiltro) {
-      manuales = manuales.filter((manual) => manual.tipo === tipoFiltro);
-    }
-
-    return manuales;
-  }, [searchQuery, marcaFiltro, tipoFiltro]);
+  
+  // Usar hook personalizado para lógica de negocio
+  const {
+    manuales: manualesFiltrados,
+    searchQuery,
+    setSearchQuery,
+    selectedMarca,
+    setSelectedMarca,
+    selectedTipo,
+    setSelectedTipo,
+    estadisticas
+  } = useManuales();
 
   const handleManualPress = (manual: Manual) => {
     router.push(`/modal?id=${manual.id}`);
@@ -46,14 +31,14 @@ export default function CatalogoScreen() {
 
   const handleClearFilters = () => {
     setSearchQuery('');
-    setMarcaFiltro(null);
-    setTipoFiltro(null);
+    setSelectedMarca(null);
+    setSelectedTipo(null);
   };
 
   const renderEmptyState = () => (
     <EmptyState
       onClearFilters={handleClearFilters}
-      showClearButton={searchQuery !== '' || marcaFiltro !== null || tipoFiltro !== null}
+      showClearButton={searchQuery !== '' || selectedMarca !== null || selectedTipo !== null}
     />
   );
 
@@ -76,17 +61,17 @@ export default function CatalogoScreen() {
             <FontAwesome name="file-pdf-o" size={32} color={colors.primary} />
             <View style={styles.statText}>
               <Text style={[styles.statNumber, { color: colors.text }]}>
-                {manualesFiltrados.length}
+                {estadisticas.filtrados}
               </Text>
               <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
-                {manualesFiltrados.length === 1 ? 'Manual' : 'Manuales'}
+                {estadisticas.filtrados === 1 ? 'Manual' : 'Manuales'}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Desglose por tipo */}
-        {!tipoFiltro && (
+        {/* Desglose por tipo (solo si no estamos filtrando por tipo) */}
+        {!selectedTipo && (
           <View style={styles.breakdown}>
             <View
               style={[
@@ -128,10 +113,10 @@ export default function CatalogoScreen() {
       <PremiumHeader
         onSearch={setSearchQuery}
         searchQuery={searchQuery}
-        onMarcaFilter={setMarcaFiltro}
-        onTipoFilter={setTipoFiltro}
-        marcaSeleccionada={marcaFiltro}
-        tipoSeleccionado={tipoFiltro}
+        onMarcaFilter={setSelectedMarca}
+        onTipoFilter={setSelectedTipo}
+        marcaSeleccionada={selectedMarca}
+        tipoSeleccionado={selectedTipo}
       />
 
       <FlatList

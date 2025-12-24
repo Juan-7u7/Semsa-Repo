@@ -1,23 +1,25 @@
-import { obtenerManualPorId } from '@/constants/Manuales';
+import { MANUALES } from '@/constants/Manuales';
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /**
  * Modal Premium de Detalle del Manual
  * Diseño limpio y profesional con glassmorphism
  */
-export default function PremiumModalScreen() {
+export default function ModalScreen() {
+  const { id } = useLocalSearchParams();
+  const router = useRouter();
   const { colors, isDark } = useTheme();
   const { toggleFavorito, esFavorito } = useFavoritos();
-  const router = useRouter();
+  
+  const manual = MANUALES.find((m) => m.id === Number(id));
   const params = useLocalSearchParams();
   
   const manualId = params.id ? parseInt(params.id as string) : null;
-  const manual = manualId ? obtenerManualPorId(manualId) : null;
   const isFavorito = manualId ? esFavorito(manualId) : false;
 
   const getMarcaColor = (marca: string) => {

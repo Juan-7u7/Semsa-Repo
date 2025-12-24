@@ -1,7 +1,8 @@
 import PremiumManualCard from '@/components/PremiumManualCard';
-import { obtenerTodosManuales, type Manual } from '@/constants/Manuales';
+import { MANUALES } from '@/constants/Manuales';
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { Manual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
@@ -9,13 +10,13 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 
 export default function FavoritosScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
-  const { favoritos } = useFavoritos();
   const router = useRouter();
+  const { esFavorito } = useFavoritos();
 
+  // Obtener manuales favoritos
   const manualesFavoritos = useMemo(() => {
-    const todosManuales = obtenerTodosManuales();
-    return todosManuales.filter((manual) => favoritos.includes(manual.id));
-  }, [favoritos]);
+    return MANUALES.filter((manual) => esFavorito(manual.id));
+  }, [esFavorito]);
 
   const handleManualPress = (manual: Manual) => {
     router.push(`/modal?id=${manual.id}`);

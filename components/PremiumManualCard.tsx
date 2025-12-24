@@ -1,6 +1,6 @@
-import { type Manual } from '@/constants/Manuales';
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { type Manual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
