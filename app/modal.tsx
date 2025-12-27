@@ -2,10 +2,12 @@ import { MANUALES } from '@/constants/Manuales';
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Asset } from 'expo-asset';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { shareAsync } from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /**
  * Modal Premium de Detalle del Manual
@@ -16,6 +18,7 @@ export default function ModalScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const { toggleFavorito, esFavorito } = useFavoritos();
+  const [loading, setLoading] = useState(false);
   
   const manual = MANUALES.find((m) => m.id === Number(id));
   const params = useLocalSearchParams();
@@ -28,11 +31,71 @@ export default function ModalScreen() {
       Yale: '#DC2626',
       Jet: '#2563EB',
       Harrington: '#059669',
+      Accolift: '#E11D48',
+      Budgit: '#D97706',
+      CM: '#EA580C',
+      Cummings: '#65A30D',
+      Demag: '#0284C7',
+      MIT: '#7C3AED',
+      'R&M': '#DB2777',
+      Shawbox: '#0D9488',
+      Coffing: '#CA8A04',
+      Kito: '#EF4444',
     };
     return colores[marca] || colors.primary;
   };
 
   const marcaColor = manual ? getMarcaColor(manual.marca) : colors.primary;
+
+  const getPdfUri = async () => {
+    if (!manual?.archivo) return null;
+    try {
+      const asset = Asset.fromModule(manual.archivo);
+      if (!asset.localUri) {
+        await asset.downloadAsync();
+      }
+      return asset.localUri;
+    } catch (error) {
+      console.error('Error loading PDF asset:', error);
+      return null;
+    }
+  };
+
+  const handleViewPdf = async () => {
+    setLoading(true);
+    try {
+      const uri = await getPdfUri();
+      if (uri) {
+        // Navegar al visor interno
+        router.push({
+          pathname: '/reader',
+          params: { uri, title: manual?.titulo }
+        });
+      } else {
+        Alert.alert('Error', 'No se pudo cargar el archivo PDF.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Ocurrió un error al intentar abrir el PDF.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSharePdf = async () => {
+    setLoading(true);
+    try {
+      const uri = await getPdfUri();
+      if (uri) {
+        await shareAsync(uri, { dialogTitle: `Compartir manual: ${manual?.titulo}` });
+      } else {
+        Alert.alert('Error', 'No se pudo preparar el archivo para compartir.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Ocurrió un error al intentar compartir.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!manual) {
     return (
@@ -129,21 +192,55 @@ export default function ModalScreen() {
 
         {/* Contenido principal */}
         <View style={styles.content}>
-          {/* Visor de PDF simulado */}
-          <View style={[styles.pdfViewer, { backgroundColor: colors.backgroundSecondary }]}>
-            <View style={styles.pdfIcon}>
-              <FontAwesome name="file-pdf-o" size={64} color={colors.primary} />
+          {/* Portada del Manual (Simulación Visual) */}
+          <TouchableOpacity 
+            style={[styles.pdfCoverContainer, { borderColor: colors.border }]}
+            onPress={handleViewPdf}
+            activeOpacity={0.9}
+            disabled={loading}
+          >
+            {/* Hoja de papel simulada */}
+            <View style={styles.paperSheet}>
+              {/* Encabezado de la hoja */}
+              <View style={styles.paperHeader}>
+                <Text style={[styles.brandText, { color: marcaColor }]}>
+                  {manual.marca.toUpperCase()}
+                </Text>
+                <View style={[styles.brandLine, { backgroundColor: marcaColor }]} />
+              </View>
+
+              {/* Contenido de la portada */}
+              <View style={styles.paperContent}>
+                <Text style={styles.manualType}>MANUAL DE USUARIO</Text>
+                <Text style={styles.coverTitle} numberOfLines={3}>
+                  {manual.titulo}
+                </Text>
+                
+                <View style={styles.decorationLines}>
+                   <View style={styles.lineLong} />
+                   <View style={styles.lineLong} />
+                   <View style={styles.lineShort} />
+                </View>
+
+                {/* Icono decorativo de PDF abajo */}
+                <View style={styles.bottomIcon}>
+                   <FontAwesome name="file-pdf-o" size={24} color={colors.textMuted} />
+                   <Text style={styles.clickToView}>Tocar para leer</Text>
+                </View>
+              </View>
+
+              {/* Efecto de brillo/gradiente simple visual */}
+              <View style={styles.paperShine} />
             </View>
 
-            <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
-
-            <Text style={[styles.loadingTitle, { color: colors.text }]}>
-              Cargando Visor de PDF
-            </Text>
-            <Text style={[styles.loadingSubtitle, { color: colors.textSecondary }]}>
-              Preparando el documento para visualización
-            </Text>
-          </View>
+            {/* Overlay de carga si es necesario */}
+            {loading && (
+              <View style={styles.loadingOverlay}>
+                 <ActivityIndicator size="large" color={colors.primary} />
+                 <Text style={[styles.loadingText, { color: colors.primary }]}>Abriendo...</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
           {/* Información del documento */}
           <View style={[styles.infoCard, { backgroundColor: colors.backgroundSecondary }]}>
@@ -166,25 +263,31 @@ export default function ModalScreen() {
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
                   Tamaño
                 </Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>~2.5 MB</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{manual.tamano || 'Desconocido'}</Text>
               </View>
 
               <View style={styles.infoItem}>
                 <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
                   Páginas
                 </Text>
-                <Text style={[styles.infoValue, { color: colors.text }]}>~15 páginas</Text>
+                <Text style={[styles.infoValue, { color: colors.text }]}>{manual.paginas ? `${manual.paginas} páginas` : 'Desconocido'}</Text>
               </View>
             </View>
           </View>
 
-          {/* Botón de descarga */}
+          {/* Botón de compartir */}
           <TouchableOpacity
             style={[styles.downloadButton, { backgroundColor: colors.primary }]}
             activeOpacity={0.8}
+            onPress={handleSharePdf}
+            disabled={loading}
           >
-            <FontAwesome name="download" size={20} color="#000000" />
-            <Text style={styles.downloadText}>Descargar PDF</Text>
+            {loading ? (
+              <ActivityIndicator color="#000000" />
+            ) : (
+              <FontAwesome name="share-alt" size={20} color="#000000" />
+            )}
+            <Text style={styles.downloadText}>Compartir PDF</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -246,29 +349,118 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 20,
   },
-  pdfViewer: {
-    borderRadius: 16,
-    padding: 40,
+  // Estilos de la Portada Simulada
+  pdfCoverContainer: {
+    width: '100%',
+    aspectRatio: 0.75, // Proporción similar a carta/A4
     alignItems: 'center',
-    minHeight: 300,
     justifyContent: 'center',
+    marginBottom: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    padding: 10,
   },
-  pdfIcon: {
-    marginBottom: 24,
+  paperSheet: {
+    width: '85%',
+    height: '95%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+    position: 'relative',
   },
-  loader: {
+  paperHeader: {
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
-  loadingTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center',
+  brandText: {
+    fontSize: 20,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 4,
   },
-  loadingSubtitle: {
-    fontSize: 14,
+  brandLine: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+  },
+  paperContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  manualType: {
+    fontSize: 10,
+    color: '#666',
+    letterSpacing: 2,
+    marginBottom: 12,
+    fontWeight: '600',
+  },
+  coverTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111',
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 24,
+    marginBottom: 30,
+  },
+  decorationLines: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 40,
+  },
+  lineLong: {
+    width: '60%',
+    height: 1,
+    backgroundColor: '#E5E5E5',
+  },
+  lineShort: {
+    width: '30%',
+    height: 1,
+    backgroundColor: '#E5E5E5',
+  },
+  bottomIcon: {
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 'auto',
+  },
+  clickToView: {
+    fontSize: 10,
+    color: '#999',
+    fontWeight: '500',
+  },
+  paperShine: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 60,
+    height: 60,
+    backgroundColor: '#F9FAFB',
+    borderBottomLeftRadius: 60,
+    zIndex: -1,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    borderRadius: 12,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontWeight: '600',
   },
   infoCard: {
     borderRadius: 16,

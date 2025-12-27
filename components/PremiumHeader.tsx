@@ -25,10 +25,24 @@ export default function PremiumHeader({
   marcaSeleccionada,
   tipoSeleccionado,
 }: PremiumHeaderProps) {
-  const { colors, isDark, toggleTheme } = useTheme();
+  const { colors } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
-  const marcas: MarcaManual[] = ['Yale', 'Jet', 'Harrington'];
+  const marcas: MarcaManual[] = [
+    'Yale',
+    'Jet',
+    'Harrington',
+    'Accolift',
+    'Budgit',
+    'CM',
+    'Cummings',
+    'Demag',
+    'MIT',
+    'R&M',
+    'Shawbox',
+    'Coffing',
+    'Kito',
+  ];
   const tipos = [
     { value: null, label: 'Todos', icon: 'th-large' },
     { value: 'Eléctrico' as TipoManual, label: 'Eléctrico', icon: 'bolt' },
@@ -38,26 +52,7 @@ export default function PremiumHeader({
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Título y tema */}
-      <View style={styles.titleRow}>
-        <View>
-          <Text style={[styles.title, { color: colors.text }]}>Catálogo</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Encuentra tus manuales
-          </Text>
-        </View>
 
-        <TouchableOpacity
-          onPress={toggleTheme}
-          style={[styles.themeButton, { backgroundColor: colors.backgroundSecondary }]}
-          activeOpacity={0.7}
-        >
-          <FontAwesome
-            name={isDark ? 'sun-o' : 'moon-o'}
-            size={18}
-            color={colors.text}
-          />
-        </TouchableOpacity>
-      </View>
 
       {/* Barra de búsqueda premium */}
       <View
@@ -171,29 +166,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 20,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '400',
-  },
-  themeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',

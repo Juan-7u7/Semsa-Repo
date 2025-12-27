@@ -36,9 +36,19 @@ export default function ManualCard({ manual, onPress }: ManualCardProps) {
   // Obtener el logo según la marca
   const getMarcaLogo = (marca: string) => {
     const logos: Record<string, string> = {
-      Yale: '🏭', // Emoji de fábrica para Yale
-      Jet: '✈️',  // Emoji de avión para Jet
-      Harrington: '⚙️', // Emoji de engranaje para Harrington
+      Yale: '🏭',
+      Jet: '✈️',
+      Harrington: '⚙️',
+      Accolift: '🏗️',
+      Budgit: '🦾',
+      CM: '⛓️',
+      Cummings: '⚡',
+      Demag: '🏗️',
+      MIT: '📟',
+      'R&M': '🏗️',
+      Shawbox: '📦',
+      Coffing: '🏗️',
+      Kito: '🇯🇵',
     };
     return logos[marca] || '📦';
   };
@@ -46,9 +56,19 @@ export default function ManualCard({ manual, onPress }: ManualCardProps) {
   // Obtener color de marca
   const getMarcaColor = (marca: string) => {
     const colores: Record<string, string> = {
-      Yale: '#DC2626', // Rojo
-      Jet: '#2563EB', // Azul
-      Harrington: '#059669', // Verde
+      Yale: '#DC2626',
+      Jet: '#2563EB',
+      Harrington: '#059669',
+      Accolift: '#E11D48',
+      Budgit: '#D97706',
+      CM: '#EA580C',
+      Cummings: '#65A30D',
+      Demag: '#0284C7',
+      MIT: '#7C3AED',
+      'R&M': '#DB2777',
+      Shawbox: '#0D9488',
+      Coffing: '#CA8A04',
+      Kito: '#EF4444',
     };
     return colores[marca] || colors.primary;
   };

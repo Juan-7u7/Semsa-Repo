@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useFavoritos } from '@/contexts/FavoritosContext';
@@ -16,7 +16,7 @@ function TabBarIcon(props: {
 }
 
 function TabLayoutContent() {
-  const { colors } = useTheme();
+  const { colors, toggleTheme, colorScheme } = useTheme();
   const { cantidadFavoritos } = useFavoritos();
 
   return (
@@ -43,18 +43,30 @@ function TabLayoutContent() {
           title: 'Catálogo',
           tabBarIcon: ({ color }) => <TabBarIcon name="th-large" color={color} />,
           headerRight: () => (
-            <Link href="/help" asChild>
-              <Pressable>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
+              <Pressable onPress={toggleTheme} style={{ marginRight: 15 }}>
                 {({ pressed }) => (
                   <FontAwesome
-                    name="info-circle"
+                    name={colorScheme === 'dark' ? 'sun-o' : 'moon-o'}
                     size={25}
                     color={colors.text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
+                    style={{ opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
               </Pressable>
-            </Link>
+              <Link href="/help" asChild>
+                <Pressable>
+                  {({ pressed }) => (
+                    <FontAwesome
+                      name="info-circle"
+                      size={25}
+                      color={colors.text}
+                      style={{ opacity: pressed ? 0.5 : 1 }}
+                    />
+                  )}
+                </Pressable>
+              </Link>
+            </View>
           ),
         }}
       />

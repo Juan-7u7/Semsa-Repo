@@ -68,6 +68,16 @@ export default function PremiumManualCard({
       Yale: '#DC2626',
       Jet: '#2563EB',
       Harrington: '#059669',
+      Accolift: '#E11D48',
+      Budgit: '#D97706',
+      CM: '#EA580C',
+      Cummings: '#65A30D',
+      Demag: '#0284C7',
+      MIT: '#7C3AED',
+      'R&M': '#DB2777',
+      Shawbox: '#0D9488',
+      Coffing: '#CA8A04',
+      Kito: '#EF4444',
     };
     return colores[marca] || colors.primary;
   };

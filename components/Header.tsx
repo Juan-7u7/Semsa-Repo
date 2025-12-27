@@ -62,7 +62,21 @@ export default function Header({
   };
 
   // Marcas disponibles
-  const marcas: MarcaManual[] = ['Yale', 'Jet', 'Harrington'];
+  const marcas: MarcaManual[] = [
+    'Yale',
+    'Jet',
+    'Harrington',
+    'Accolift',
+    'Budgit',
+    'CM',
+    'Cummings',
+    'Demag',
+    'MIT',
+    'R&M',
+    'Shawbox',
+    'Coffing',
+    'Kito',
+  ];
 
   // Tipos disponibles (con opción "Todos")
   const tipos: (TipoManual | 'Todos')[] = ['Todos', 'Eléctrico', 'Manual'];
