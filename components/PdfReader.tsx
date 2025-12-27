@@ -27,21 +27,21 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [drawColor, setDrawColor] = useState('#FF0000');
   const [pdfData, setPdfData] = useState<string | null>(null);
+  
+  // Search State
+  const [totalMatches, setTotalMatches] = useState(0);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
 
   useEffect(() => {
     const loadPdf = async () => {
+      // ... (existing code omitted for brevity, keeping it same)
       if (!uri) return;
-      
-      // En Expo Go (Android/iOS), WebView tiene problemas para acceder a file:// con XHR
-      // Solución: Leer como Base64 e inyectar directamente
       if (uri.startsWith('file://')) {
         try {
           const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
           setPdfData(`data:application/pdf;base64,${base64}`);
         } catch (e) {
-          console.error('Error leyendo PDF:', e);
-          // Fallback a URI normal por si acaso
-          setPdfData(uri);
+            setPdfData(uri);
         }
       } else {
          setPdfData(uri);
@@ -51,7 +51,6 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
   }, [uri]);
 
   // Construcción del HTML visor
-  // Nota: Usamos PDF.js vía CDN. En producción idealmente se empaquetaría.
   const viewerHtml = React.useMemo(() => `
 <!DOCTYPE html>
 <html>
@@ -101,7 +100,7 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
     let currentMatchIndex = -1;
     let pendingHighlight = null; // { pageNum, item }
     
-    // Configuración de dibujo
+    // Config
     let isDrawing = false;
     let drawingEnabled = false;
     let lastX = 0;
@@ -111,20 +110,17 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
     drawCtx.lineWidth = 3;
     drawCtx.strokeStyle = '#FF0000';
 
-    // Inicializar PDF.js
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
     function renderPage(num) {
       pageRendering = true;
       pdfDoc.getPage(num).then(function(page) {
-        // Ajustar escala
         const viewport = page.getViewport({scale: scale});
         const containerWidth = document.body.clientWidth;
         const newScale = (containerWidth / page.getViewport({scale: 1.0}).width);
         const scaledViewport = page.getViewport({scale: newScale});
         currentViewport = scaledViewport;
 
-        // Resize all canvases
         canvas.height = scaledViewport.height;
         canvas.width = scaledViewport.width;
         highlightCanvas.height = scaledViewport.height;
@@ -132,7 +128,6 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
         drawCanvas.height = scaledViewport.height;
         drawCanvas.width = scaledViewport.width;
         
-        // Clear highlights on new page render (unless pending)
         highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
 
         const renderContext = {
@@ -151,6 +146,9 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
           } else if (pendingHighlight && pendingHighlight.pageNum === num) {
              drawHighlight(pendingHighlight.item);
              pendingHighlight = null;
+          } else if (currentMatchIndex >= 0 && searchMatches[currentMatchIndex].pageNum === num) {
+             // Redraw current match if on same page
+             drawHighlight(searchMatches[currentMatchIndex].item);
           }
         });
       });
@@ -192,31 +190,48 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
        currentMatchIndex = -1;
        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'search_start', query: query }));
 
-       // Naive search: iterate all pages
-       // Optimización: hacerlo en chunks si fuera muy lento, pero para manuales está bien.
        for (let i = 1; i <= pdfDoc.numPages; i++) {
           try {
              const page = await pdfDoc.getPage(i);
              const textContent = await page.getTextContent();
-             
-             // Buscar string en items
              textContent.items.forEach(item => {
                 if (item.str && item.str.toLowerCase().includes(query.toLowerCase())) {
                    searchMatches.push({ pageNum: i, item: item });
                 }
              });
-          } catch(e) { console.error('Search error page ' + i, e); }
+          } catch(e) {}
        }
        
        if (searchMatches.length > 0) {
           currentMatchIndex = 0;
           showMatch(searchMatches[0]);
-          alert('Encontrado: ' + searchMatches.length + ' coincidencias');
        } else {
           alert('No se encontraron coincidencias');
        }
        
-       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'search_end', count: searchMatches.length }));
+       sendSearchStatus();
+    }
+
+    function nextMatch() {
+        if (searchMatches.length === 0) return;
+        currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
+        showMatch(searchMatches[currentMatchIndex]);
+        sendSearchStatus();
+    }
+
+    function prevMatch() {
+        if (searchMatches.length === 0) return;
+        currentMatchIndex = (currentMatchIndex - 1 + searchMatches.length) % searchMatches.length;
+        showMatch(searchMatches[currentMatchIndex]);
+        sendSearchStatus();
+    }
+    
+    function sendSearchStatus() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ 
+            type: 'search_result', 
+            count: searchMatches.length, 
+            index: currentMatchIndex + 1 // 1-based for UI
+        }));
     }
 
     function showMatch(match) {
@@ -231,51 +246,21 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
 
     function drawHighlight(item) {
        if (!currentViewport) return;
-       // Limpiar anteriores en esta página
        highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
        
-       // item.transform: [scaleX, skewX, skewY, scaleY, x, y]
-       // PDF rect: x, y, width, height (approx scaleY)
-       // Note: item.width is the width of the text string in PDF units
-       // item.transform[0] is roughly font size width-scaling? item.transform[3] is height.
-       
-       // Simplificación para resaltar:
        const x = item.transform[4];
        const y = item.transform[5];
-       const w = item.width * (item.transform[0] || 1); // Adjust width logic if needed? usually .width is enough? item.width is in glyph space normalized? No, usually in logical coords.
+       const w = item.width * (item.transform[0] || 1);
        const h = item.transform[3] || 12; // Height
        
-       // The 'y' in PDF is bottom-left of the text baseline.
-       // Viewport transform handles flipping Y if configured, but default PDF.js viewport standardizes top-left origin for canvas.
-       
-       // Convert [x, y] (bottom-left) to viewport [vx, vy]
-       // Note: We want the bounding box. Text is usually [x, y, w, h] where y starts at baseline.
-       // The rect to highlight should be [x, y + difference, w, h]
-       
-       // Using viewport.convertToViewportRectangle([x, y - descent, x + width, y + height])
-       // Standard PDF text: (x, y) is origin.
-       // Let's use simple rect transformation manually or utilize `convertToViewportRectangle` if I could construct the rect correctly.
-       
-       // Hack fiable: Renderizar un rect en coord PDF y que el viewport lo transforme.
-       // Pero dibujamos en canvas pixelado.
-       
-       // Get rect in viewport pixels:
-       // Point 1: (x, y)
-       // Point 2: (x + w, y + h) -> wait, y is up? 
-       // Just use transform:
-       
        const rect = currentViewport.convertToViewportRectangle([x, y, x + item.width, y + h]);
-       // Rect output is [minX, minY, maxX, maxY] usually
-       
-       // Normalize rect
        const minX = Math.min(rect[0], rect[2]);
        const minY = Math.min(rect[1], rect[3]);
        const width = Math.abs(rect[2] - rect[0]);
        const height = Math.abs(rect[3] - rect[1]);
 
-       // Dibujar
        highlightCtx.fillStyle = 'rgba(255, 255, 0, 0.4)';
-       highlightCtx.fillRect(minX, minY - height, width, height * 1.5); // Ajuste visual basico
+       highlightCtx.fillRect(minX, minY - height, width, height * 1.5);
     }
     
     // --- Lógica de Dibujo ---
@@ -312,9 +297,12 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
 
     drawCanvas.addEventListener('touchend', () => isDrawing = false);
     
-    // Handle Search Inject
-    // We overwrite the alert-based search
+    // Handle Messages
+    window.addEventListener('message', (event) => {}); // RN handles injects directly but good practice
+    
     window.performSearch = performSearch;
+    window.nextMatch = nextMatch;
+    window.prevMatch = prevMatch;
   </script>
 </body>
 </html>
@@ -327,6 +315,10 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
 
   const injectSearch = (query: string) => {
     return `window.performSearch('${query}'); true;`; 
+  };
+  
+  const injectSearchNav = (dir: 'next' | 'prev') => {
+      return dir === 'next' ? 'window.nextMatch(); true;' : 'window.prevMatch(); true;';
   };
   
   const injectPageNav = (dir: 'next' | 'prev') => {
@@ -350,6 +342,9 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
         } else if (data.type === 'meta') {
             setTotalPages(data.total);
             setCurrentPage(data.page);
+        } else if (data.type === 'search_result') {
+            setTotalMatches(data.count);
+            setCurrentMatchIndex(data.index);
         }
     } catch (e) {
         console.log('Error parsing WebView message', e);
@@ -400,8 +395,21 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
               onChangeText={setSearchQuery}
               onSubmitEditing={() => webViewRef.current?.injectJavaScript(injectSearch(searchQuery))}
            />
-           <TouchableOpacity style={styles.actionButtonSmall} onPress={() => webViewRef.current?.injectJavaScript(injectSearch(searchQuery))}>
-               <FontAwesome name="search" size={14} color={colors.text} />
+           {totalMatches > 0 && (
+               <Text style={{fontSize: 12, color: colors.textSecondary, marginRight: 8}}>
+                   {currentMatchIndex}/{totalMatches}
+               </Text>
+           )}
+           <TouchableOpacity style={styles.actionButtonSmall} onPress={() => webViewRef.current?.injectJavaScript(injectSearchNav('prev'))}>
+               <FontAwesome name="chevron-up" size={14} color={colors.text} />
+           </TouchableOpacity>
+           <View style={{width:8}} />
+           <TouchableOpacity style={styles.actionButtonSmall} onPress={() => webViewRef.current?.injectJavaScript(injectSearchNav('next'))}>
+               <FontAwesome name="chevron-down" size={14} color={colors.text} />
+           </TouchableOpacity>
+           <View style={{width:8}} />
+           <TouchableOpacity style={[styles.actionButtonSmall, {backgroundColor: colors.primary}]} onPress={() => webViewRef.current?.injectJavaScript(injectSearch(searchQuery))}>
+               <FontAwesome name="search" size={14} color="#000" />
            </TouchableOpacity>
         </View>
       )}

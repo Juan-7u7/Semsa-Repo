@@ -24,6 +24,10 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [drawColor, setDrawColor] = useState('#FF0000');
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  
+  // Search State
+  const [totalMatches, setTotalMatches] = useState(0);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
 
   useEffect(() => {
     if (uri) {
@@ -135,6 +139,8 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
           } else if (pendingHighlight && pendingHighlight.pageNum === num) {
              drawHighlight(pendingHighlight.item);
              pendingHighlight = null;
+          } else if (currentMatchIndex >= 0 && searchMatches[currentMatchIndex].pageNum === num) {
+             drawHighlight(searchMatches[currentMatchIndex].item);
           }
         });
       });
@@ -191,10 +197,33 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
        if (searchMatches.length > 0) {
           currentMatchIndex = 0;
           showMatch(searchMatches[0]);
-          alert('Encontrado: ' + searchMatches.length + ' coincidencias');
        } else {
           alert('No se encontraron coincidencias');
        }
+       
+       sendSearchStatus();
+    }
+    
+    function nextMatch() {
+        if (searchMatches.length === 0) return;
+        currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
+        showMatch(searchMatches[currentMatchIndex]);
+        sendSearchStatus();
+    }
+
+    function prevMatch() {
+        if (searchMatches.length === 0) return;
+        currentMatchIndex = (currentMatchIndex - 1 + searchMatches.length) % searchMatches.length;
+        showMatch(searchMatches[currentMatchIndex]);
+        sendSearchStatus();
+    }
+    
+    function sendSearchStatus() {
+        sendMessage({ 
+            type: 'search_result', 
+            count: searchMatches.length, 
+            index: currentMatchIndex + 1 
+        });
     }
 
     function showMatch(match) {
@@ -237,6 +266,7 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
         if (!drawingEnabled) return;
         isDrawing = true;
         const rect = drawCanvas.getBoundingClientRect();
+        // Soporte Touch y Mouse
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         lastX = clientX - rect.left;
@@ -284,6 +314,10 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
                 setDrawingMode(msg.enabled, msg.color);
             } else if (msg.type === 'search') {
                 performSearch(msg.query);
+            } else if (msg.type === 'search_next') {
+                nextMatch();
+            } else if (msg.type === 'search_prev') {
+                prevMatch();
             } else if (msg.type === 'nav') {
                 if (msg.dir === 'next') onNextPage();
                 else if (msg.dir === 'prev') onPrevPage();
@@ -318,6 +352,9 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
             } else if (data.type === 'meta') {
                 setTotalPages(data.total);
                 setCurrentPage(data.page);
+            } else if (data.type === 'search_result') {
+                setTotalMatches(data.count);
+                setCurrentMatchIndex(data.index);
             }
         } catch (e) {}
     };
@@ -368,8 +405,21 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
               onChangeText={setSearchQuery}
               onSubmitEditing={() => sendMessageToIframe({ type: 'search', query: searchQuery })}
            />
-           <TouchableOpacity style={styles.actionButtonSmall as any} onPress={() => sendMessageToIframe({ type: 'search', query: searchQuery })}>
-              <FontAwesome name="search" size={14} color={colors.text} />
+           {totalMatches > 0 && (
+               <Text style={{fontSize: 12, color: colors.textSecondary, marginRight: 8}}>
+                   {currentMatchIndex}/{totalMatches}
+               </Text>
+           )}
+           <TouchableOpacity style={styles.actionButtonSmall as any} onPress={() => sendMessageToIframe({ type: 'search_prev' })}>
+               <FontAwesome name="chevron-up" size={14} color={colors.text} />
+           </TouchableOpacity>
+           <View style={{width:8}} />
+           <TouchableOpacity style={styles.actionButtonSmall as any} onPress={() => sendMessageToIframe({ type: 'search_next' })}>
+               <FontAwesome name="chevron-down" size={14} color={colors.text} />
+           </TouchableOpacity>
+           <View style={{width:8}} />
+           <TouchableOpacity style={[styles.actionButtonSmall as any, {backgroundColor: colors.primary}]} onPress={() => sendMessageToIframe({ type: 'search', query: searchQuery })}>
+              <FontAwesome name="search" size={14} color="#000" />
            </TouchableOpacity>
         </View>
       )}
