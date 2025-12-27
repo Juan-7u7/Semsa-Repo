@@ -69,7 +69,7 @@ export default function ModalScreen() {
         // Navegar al visor interno
         router.push({
           pathname: '/reader',
-          params: { uri, title: manual?.titulo }
+          params: { uri, title: manual?.titulo, id: manual?.id }
         });
       } else {
         Alert.alert('Error', 'No se pudo cargar el archivo PDF.');

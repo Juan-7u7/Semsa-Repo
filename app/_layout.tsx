@@ -90,6 +90,7 @@ function NavigationWrapper() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="help" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="reader" options={{ headerShown: false }} />
       </Stack>
       {/* Banner de descarga solo visible en Web */}
       <WebDownloadBanner />
