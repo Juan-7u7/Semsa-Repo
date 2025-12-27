@@ -27,12 +27,17 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
 
   useEffect(() => {
     if (uri) {
-        setPdfUrl(uri);
+        // En web, si es ruta relativa y usamos srcDoc, necesitamos la URL completa
+        if (typeof window !== 'undefined' && uri.startsWith('/')) {
+             setPdfUrl(`${window.location.origin}${uri}`);
+        } else {
+             setPdfUrl(uri);
+        }
     }
   }, [uri]);
 
   // Construcción del HTML visor (Adaptado para Web Iframe)
-  const viewerHtml = `
+  const viewerHtml = React.useMemo(() => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -44,18 +49,20 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     #container { position: relative; width: 100%; min-height: 100vh; display: flex; justify-content: center; }
     #wrapper { position: relative; }
     #pdf-render { display: block; }
-    #canvas-layer { 
+    #highlight-layer, #canvas-layer { 
       position: absolute; 
       top: 0; left: 0; 
       pointer-events: none;
-      z-index: 10;
     }
+    #highlight-layer { z-index: 5; }
+    #canvas-layer { z-index: 10; }
   </style>
 </head>
 <body>
   <div id="container">
     <div id="wrapper">
       <canvas id="pdf-render"></canvas>
+      <canvas id="highlight-layer"></canvas>
       <canvas id="canvas-layer"></canvas>
     </div>
   </div>
@@ -67,12 +74,22 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     let pageRendering = false;
     let pageNumPending = null;
     let scale = 1.5;
+    
+    // Canvases
     const canvas = document.getElementById('pdf-render');
     const ctx = canvas.getContext('2d');
+    const highlightCanvas = document.getElementById('highlight-layer');
+    const highlightCtx = highlightCanvas.getContext('2d');
     const drawCanvas = document.getElementById('canvas-layer');
     const drawCtx = drawCanvas.getContext('2d');
     
-    // Configuración de dibujo
+    // State
+    let currentViewport = null;
+    let searchMatches = [];
+    let currentMatchIndex = -1;
+    let pendingHighlight = null;
+    
+    // Draw Config
     let isDrawing = false;
     let drawingEnabled = false;
     let lastX = 0;
@@ -87,17 +104,21 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     function renderPage(num) {
       pageRendering = true;
       pdfDoc.getPage(num).then(function(page) {
-        // En web, usamos un ancho máximo razonable
         const desiredWidth = Math.min(window.innerWidth * 0.95, 800);
         const viewport = page.getViewport({scale: 1.0});
         const newScale = desiredWidth / viewport.width;
         const scaledViewport = page.getViewport({scale: newScale});
+        currentViewport = scaledViewport;
 
+        // Resize all
         canvas.height = scaledViewport.height;
         canvas.width = scaledViewport.width;
-        
+        highlightCanvas.height = scaledViewport.height;
+        highlightCanvas.width = scaledViewport.width;
         drawCanvas.height = scaledViewport.height;
         drawCanvas.width = scaledViewport.width;
+        
+        highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
 
         const renderContext = {
           canvasContext: ctx,
@@ -111,6 +132,9 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
           if (pageNumPending !== null) {
             renderPage(pageNumPending);
             pageNumPending = null;
+          } else if (pendingHighlight && pendingHighlight.pageNum === num) {
+             drawHighlight(pendingHighlight.item);
+             pendingHighlight = null;
           }
         });
       });
@@ -144,6 +168,63 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
           sendMessage({ type: 'loaded', total: pdfDoc.numPages });
         });
     }
+    
+    // --- Search ---
+    async function performSearch(query) {
+       if (!query || query.length < 3) return;
+       
+       searchMatches = [];
+       currentMatchIndex = -1;
+       
+       for (let i = 1; i <= pdfDoc.numPages; i++) {
+          try {
+             const page = await pdfDoc.getPage(i);
+             const textContent = await page.getTextContent();
+             textContent.items.forEach(item => {
+                if (item.str && item.str.toLowerCase().includes(query.toLowerCase())) {
+                   searchMatches.push({ pageNum: i, item: item });
+                }
+             });
+          } catch(e) {}
+       }
+       
+       if (searchMatches.length > 0) {
+          currentMatchIndex = 0;
+          showMatch(searchMatches[0]);
+          alert('Encontrado: ' + searchMatches.length + ' coincidencias');
+       } else {
+          alert('No se encontraron coincidencias');
+       }
+    }
+
+    function showMatch(match) {
+       if (pageNum !== match.pageNum) {
+          pageNum = match.pageNum;
+          pendingHighlight = match;
+          renderPage(pageNum);
+       } else {
+          drawHighlight(match.item);
+       }
+    }
+
+    function drawHighlight(item) {
+       if (!currentViewport) return;
+       highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+       
+       const x = item.transform[4];
+       const y = item.transform[5];
+       const w = item.width * (item.transform[0] || 1); 
+       const h = item.transform[3] || 12;
+       
+       const rect = currentViewport.convertToViewportRectangle([x, y, x + item.width, y + h]);
+       const minX = Math.min(rect[0], rect[2]);
+       const minY = Math.min(rect[1], rect[3]);
+       const width = Math.abs(rect[2] - rect[0]);
+       const height = Math.abs(rect[3] - rect[1]);
+
+       highlightCtx.fillStyle = 'rgba(255, 255, 0, 0.4)';
+       highlightCtx.fillRect(minX, minY - height, width, height * 1.5);
+    }
 
     // --- Dibujo ---
     function setDrawingMode(enabled, color) {
@@ -156,7 +237,6 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
         if (!drawingEnabled) return;
         isDrawing = true;
         const rect = drawCanvas.getBoundingClientRect();
-        // Soporte Touch y Mouse
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         lastX = clientX - rect.left;
@@ -203,7 +283,7 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
             if (msg.type === 'toggle_draw') {
                 setDrawingMode(msg.enabled, msg.color);
             } else if (msg.type === 'search') {
-                alert('Buscando en PDF: ' + msg.query);
+                performSearch(msg.query);
             } else if (msg.type === 'nav') {
                 if (msg.dir === 'next') onNextPage();
                 else if (msg.dir === 'prev') onPrevPage();
@@ -213,7 +293,7 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
   </script>
 </body>
 </html>
-  `;
+  `, [pdfUrl]);
 
   // Comunicación con Iframe
   const sendMessageToIframe = (msg: any) => {
@@ -358,7 +438,9 @@ const styles = StyleSheet.create({
   headerTools: { flexDirection: 'row', alignItems: 'center' },
   toolButton: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 8, marginLeft: 4 },
   toolbar: { height: 50, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, borderBottomWidth: 1, justifyContent: 'space-between' },
-  searchInput: { flex: 1, height: 36, borderRadius: 8, paddingHorizontal: 12, marginRight: 10, fontSize: 14, outlineStyle: 'none' },
+  searchInput: { flex: 1, height: 36, borderRadius: 8, paddingHorizontal: 12, marginRight: 10, fontSize: 14, 
+    // @ts-ignore
+    outlineStyle: 'none' },
   actionButtonSmall: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 18, borderWidth: 1, borderColor: 'transparent' },
   colorPalette: { flexDirection: 'row', gap: 12 },
   colorDot: { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#fff' },

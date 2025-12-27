@@ -326,6 +326,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  downloadCard: {
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#3DDC84',
+  },
+  downloadHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  downloadTexts: {
+    flex: 1,
+  },
+  downloadTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  downloadDesc: {
+    fontSize: 13,
+  },
+  downloadButton: {
+    backgroundColor: '#3DDC84',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+    gap: 8,
+  },
+  downloadButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',

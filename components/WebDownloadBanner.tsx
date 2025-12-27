@@ -19,9 +19,9 @@ export default function WebDownloadBanner() {
   const isSmallScreen = width < 768;
 
   const handleDownload = () => {
-    // La ruta será relativa a la carpeta public
-    const apkUrl = '/apk/app-release.apk';
-    window.open(apkUrl, '_blank');
+    // Link de Dropbox proporcionado
+    const apkUrl = 'https://www.dropbox.com/scl/fo/aj3cdchktwh3u7vqdh23z/AGxaOwKQVamt-uJqvy8fn9E?rlkey=dkj5ylesxic38m4ofto9ijiru&st=1bux5eh3&dl=1';
+    window.location.href = apkUrl; 
   };
 
   return (

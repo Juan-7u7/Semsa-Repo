@@ -51,10 +51,8 @@ export default function ModalScreen() {
     if (!manual?.archivo) return null;
     try {
       const asset = Asset.fromModule(manual.archivo);
-      if (!asset.localUri) {
-        await asset.downloadAsync();
-      }
-      return asset.localUri;
+      await asset.downloadAsync();
+      return asset.localUri || asset.uri;
     } catch (error) {
       console.error('Error loading PDF asset:', error);
       return null;
