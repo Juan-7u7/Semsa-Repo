@@ -108,19 +108,29 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     function renderPage(num) {
       pageRendering = true;
       pdfDoc.getPage(num).then(function(page) {
+        const pixelRatio = window.devicePixelRatio || 1;
         const desiredWidth = Math.min(window.innerWidth * 0.95, 800);
         const viewport = page.getViewport({scale: 1.0});
-        const newScale = desiredWidth / viewport.width;
-        const scaledViewport = page.getViewport({scale: newScale});
+        const scale = (desiredWidth / viewport.width) * pixelRatio;
+        const scaledViewport = page.getViewport({scale: scale});
         currentViewport = scaledViewport;
 
-        // Resize all
+        // Resize all (Internal resolution)
         canvas.height = scaledViewport.height;
         canvas.width = scaledViewport.width;
         highlightCanvas.height = scaledViewport.height;
         highlightCanvas.width = scaledViewport.width;
         drawCanvas.height = scaledViewport.height;
         drawCanvas.width = scaledViewport.width;
+
+        // CSS Size (Display size)
+        const displayWidth = desiredWidth + 'px';
+        const displayHeight = (scaledViewport.height / pixelRatio) + 'px';
+        
+        [canvas, highlightCanvas, drawCanvas].forEach(c => {
+            c.style.width = displayWidth;
+            c.style.height = displayHeight;
+        });
         
         highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
 

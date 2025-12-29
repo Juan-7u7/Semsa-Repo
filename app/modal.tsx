@@ -3,6 +3,7 @@ import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { shareAsync } from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
@@ -84,7 +85,19 @@ export default function ModalScreen() {
     try {
       const uri = await getPdfUri();
       if (uri) {
-        await shareAsync(uri, { dialogTitle: `Compartir manual: ${manual?.titulo}` });
+        // Para que el archivo tenga el nombre correcto al compartir:
+        // 1. Sanitizar el título para usarlo como nombre de archivo
+        const validName = manual?.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'manual';
+        const newPath = `${FileSystem.cacheDirectory}${validName}.pdf`;
+        
+        // 2. Copiar el archivo a la nueva ruta
+        await FileSystem.copyAsync({
+            from: uri,
+            to: newPath
+        });
+
+        // 3. Compartir desde la nueva ruta
+        await shareAsync(newPath, { dialogTitle: `Compartir manual: ${manual?.titulo}` });
       } else {
         Alert.alert('Error', 'No se pudo preparar el archivo para compartir.');
       }

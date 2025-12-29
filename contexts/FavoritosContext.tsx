@@ -1,4 +1,5 @@
-import React, { createContext, ReactNode, useContext, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 /**
  * Tipo para el contexto de favoritos
@@ -36,6 +37,31 @@ interface FavoritosProviderProps {
  */
 export function FavoritosProvider({ children }: FavoritosProviderProps) {
   const [favoritos, setFavoritos] = useState<number[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  // Cargar favoritos al iniciar
+  useEffect(() => {
+    const loadFavoritos = async () => {
+        try {
+            const stored = await AsyncStorage.getItem('favoritos');
+            if (stored) {
+                setFavoritos(JSON.parse(stored));
+            }
+        } catch (e) {
+            console.error("Error cargando favoritos:", e);
+        } finally {
+            setLoaded(true);
+        }
+    };
+    loadFavoritos();
+  }, []);
+
+  // Guardar favoritos cuando cambian (solo si ya se cargaron)
+  useEffect(() => {
+    if (loaded) {
+        AsyncStorage.setItem('favoritos', JSON.stringify(favoritos)).catch(e => console.error("Error guardando favoritos:", e));
+    }
+  }, [favoritos, loaded]);
 
   /**
    * Agregar un manual a favoritos
