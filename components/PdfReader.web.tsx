@@ -248,7 +248,7 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
            }
        }
        
-       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'search_start' }));
+       sendMessage({ type: 'search_start' });
 
        for (let i = 1; i <= pdfDoc.numPages; i++) {
           try {
