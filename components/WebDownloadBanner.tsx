@@ -1,7 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import React, { useState } from 'react';
 import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOutUp } from 'react-native-reanimated';
 
 /**
  * Banner de descarga para Web
@@ -25,10 +25,11 @@ export default function WebDownloadBanner() {
 
   return (
     <Animated.View 
-      entering={FadeInDown.delay(500).springify()}
+      entering={FadeIn.delay(500).springify()}
       exiting={FadeOutUp.springify()}
       style={[
         styles.container, 
+        { position: Platform.OS === 'web' ? 'fixed' : 'absolute' } as any,
         isSmallScreen ? styles.containerSmall : styles.containerLarge,
       ]}
     >
