@@ -90,13 +90,33 @@ export default function ModalScreen() {
         const fileName = `${validName}.pdf`;
 
         if (Platform.OS === 'web') {
-           // En web, "compartir" suele ser descargar el archivo
-           const link = document.createElement('a');
-           link.href = uri;
-           link.download = fileName;
-           document.body.appendChild(link);
-           link.click();
-           document.body.removeChild(link);
+           // Intentar usar la API nativa de compartir si está disponible
+           try {
+             if (navigator.share) {
+               const response = await fetch(uri);
+               const blob = await response.blob();
+               const file = new File([blob], fileName, { type: 'application/pdf' });
+
+               // Verificar si se pueden compartir archivos
+               if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                 await navigator.share({
+                   files: [file],
+                   title: manual?.titulo,
+                   text: `Mira este manual: ${manual?.titulo}`
+                 });
+                 return; // Éxito, salir
+               }
+             }
+             throw new Error('Web Share API no disponible');
+           } catch (e) {
+             // Fallback: Descargar el archivo si no se puede compartir
+             const link = document.createElement('a');
+             link.href = uri;
+             link.download = fileName;
+             document.body.appendChild(link);
+             link.click();
+             document.body.removeChild(link);
+           }
         } else {
             // Nativo: Copiar a cache con nombre legible y compartir
             const newPath = `${FileSystem.cacheDirectory}${fileName}`;
