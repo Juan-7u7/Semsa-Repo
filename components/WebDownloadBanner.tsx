@@ -1,8 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import React, { useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
+import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown, FadeOutUp } from 'react-native-reanimated';
 
 /**
  * Banner de descarga para Web
@@ -27,68 +26,13 @@ export default function WebDownloadBanner() {
   return (
     <Animated.View 
       entering={FadeInDown.delay(500).springify()}
-      exiting={FadeOutDown.springify()}
+      exiting={FadeOutUp.springify()}
       style={[
         styles.container, 
         isSmallScreen ? styles.containerSmall : styles.containerLarge,
       ]}
     >
-      <View style={[
-        styles.card,
-        { 
-          backgroundColor: isDark ? 'rgba(31, 41, 55, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-          shadowColor: isDark ? '#000' : '#888',
-        }
-      ]}>
-        <View style={[
-          styles.content,
-          isSmallScreen && styles.contentSmall
-        ]}>
-          {/* Icono de Android */}
-          <View style={[
-            styles.iconContainer, 
-            { backgroundColor: isDark ? 'rgba(61, 220, 132, 0.15)' : 'rgba(61, 220, 132, 0.1)' }
-          ]}>
-            <FontAwesome name="android" size={isSmallScreen ? 24 : 28} color="#3DDC84" />
-          </View>
-
-          {/* Texto */}
-          <View style={[styles.textContainer, isSmallScreen && styles.textContainerSmall]}>
-            <Text style={[styles.title, { color: colors.text }]}>
-              {isSmallScreen ? 'Descarga la App' : 'Descarga la App para Android'}
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={2}>
-              {isSmallScreen 
-                ? 'Mejor experiencia nativa.' 
-                : 'Obtén la mejor experiencia con nuestra aplicación nativa.'}
-            </Text>
-          </View>
-
-          {/* Botones */}
-          <View style={[styles.actions, isSmallScreen && styles.actionsSmall]}>
-            <TouchableOpacity 
-              style={[
-                styles.downloadButton, 
-                { backgroundColor: colors.primary },
-                isSmallScreen && styles.downloadButtonSmall
-              ]}
-              onPress={handleDownload}
-              activeOpacity={0.8}
-            >
-              <FontAwesome name="download" size={14} color="#000000" style={{ marginRight: 8 }} />
-              <Text style={styles.downloadText}>APK</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={[styles.closeButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
-              onPress={() => setVisible(false)}
-            >
-              <FontAwesome name="times" size={16} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+// ... existing jsx ...
     </Animated.View>
   );
 }
@@ -103,11 +47,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   containerLarge: {
-    bottom: 32,
+    top: 32,
     paddingHorizontal: 24,
   },
   containerSmall: {
-    bottom: 24,
+    top: 24,
     paddingHorizontal: 16,
   },
   card: {
