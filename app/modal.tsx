@@ -8,7 +8,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { shareAsync } from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /**
  * Modal Premium de Detalle del Manual
@@ -85,24 +85,39 @@ export default function ModalScreen() {
     try {
       const uri = await getPdfUri();
       if (uri) {
-        // Para que el archivo tenga el nombre correcto al compartir:
-        // 1. Sanitizar el título para usarlo como nombre de archivo
-        const validName = manual?.titulo.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'manual';
-        const newPath = `${FileSystem.cacheDirectory}${validName}.pdf`;
-        
-        // 2. Copiar el archivo a la nueva ruta
-        await FileSystem.copyAsync({
-            from: uri,
-            to: newPath
-        });
+        // Nombre del archivo: Mantener nombre original pero remover caracteres ilegales del sistema de archivos
+        const validName = manual?.titulo.replace(/[\/\\?%*:|"<>]/g, '-') || 'documento';
+        const fileName = `${validName}.pdf`;
 
-        // 3. Compartir desde la nueva ruta
-        await shareAsync(newPath, { dialogTitle: `Compartir manual: ${manual?.titulo}` });
+        if (Platform.OS === 'web') {
+           // En web, "compartir" suele ser descargar el archivo
+           const link = document.createElement('a');
+           link.href = uri;
+           link.download = fileName;
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+        } else {
+            // Nativo: Copiar a cache con nombre legible y compartir
+            const newPath = `${FileSystem.cacheDirectory}${fileName}`;
+            
+            await FileSystem.copyAsync({
+                from: uri,
+                to: newPath
+            });
+    
+            await shareAsync(newPath, { 
+                dialogTitle: `Compartir: ${manual?.titulo}`,
+                mimeType: 'application/pdf',
+                UTI: 'com.adobe.pdf'
+            });
+        }
       } else {
-        Alert.alert('Error', 'No se pudo preparar el archivo para compartir.');
+        Alert.alert('Error', 'No se pudo preparar el archivo.');
       }
     } catch (error) {
-      Alert.alert('Error', 'Ocurrió un error al intentar compartir.');
+      console.error(error);
+      Alert.alert('Error', 'Ocurrió un error al compartir.');
     } finally {
       setLoading(false);
     }
