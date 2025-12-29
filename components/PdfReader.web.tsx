@@ -69,6 +69,7 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     let currentMatchIndex = -1;
     
     // Draw Config
+    let currentSearchQuery = '';
     let isDrawing = false;
     let drawingEnabled = false;
     let drawColor = '#FF0000';
@@ -229,7 +230,11 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     
     // --- Search ---
     async function performSearch(query) {
-       if (!query || query.length < 3) return;
+       currentSearchQuery = query;
+       if (!query || query.length < 3) {
+           sendSearchStatus();
+           return;
+       }
        
        searchMatches = [];
        currentMatchIndex = -1;
@@ -243,6 +248,8 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
            }
        }
        
+       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'search_start' }));
+
        for (let i = 1; i <= pdfDoc.numPages; i++) {
           try {
              const page = await pdfDoc.getPage(i);
@@ -297,9 +304,9 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
            
            const page = await pdfDoc.getPage(match.pageNum);
            const pixelRatio = window.devicePixelRatio || 1;
-           const availableWidth = Math.min(window.innerWidth * 0.95, 800);
+           const containerWidth = Math.min(window.innerWidth * 0.95, 800);
            const unscaledViewport = page.getViewport({scale: 1.0});
-           const scale = (availableWidth / unscaledViewport.width) * pixelRatio;
+           const scale = (containerWidth / unscaledViewport.width) * pixelRatio;
            const viewport = page.getViewport({scale: scale});
            
            drawHighlight(ctx, match.item, viewport);
@@ -307,15 +314,24 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     }
 
     function drawHighlight(ctx, item, viewport) {
-        // Clear only this highlight? Or keep? Let's clear for now
        ctx.clearRect(0,0, ctx.canvas.width, ctx.canvas.height);
        
-       const x = item.transform[4];
+       const content = item.str;
+       if (!content || !currentSearchQuery) return; 
+       
+       const matchIndex = content.toLowerCase().indexOf(currentSearchQuery.toLowerCase());
+       if (matchIndex === -1) return;
+
+       const charWidth = item.width / content.length;
+       const startOffset = matchIndex * charWidth;
+       const matchWidth = currentSearchQuery.length * charWidth;
+
+       const x = item.transform[4] + startOffset;
        const y = item.transform[5];
-       const w = item.width * (item.transform[0] || 1); 
+       const w = matchWidth; 
        const h = item.transform[3] || 12;
        
-       const rect = viewport.convertToViewportRectangle([x, y, x + item.width, y + h]);
+       const rect = viewport.convertToViewportRectangle([x, y, x + w, y + h]);
        const minX = Math.min(rect[0], rect[2]);
        const minY = Math.min(rect[1], rect[3]);
        const width = Math.abs(rect[2] - rect[0]);
