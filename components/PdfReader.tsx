@@ -98,31 +98,39 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    function createPageElements(pageNum, viewport) {
+    function createPageElements(pageNum, renderViewport, displayViewport) {
         const container = document.getElementById('container');
         
         const pageDiv = document.createElement('div');
         pageDiv.className = 'page-container';
         pageDiv.id = 'page-' + pageNum;
-        pageDiv.style.width = viewport.width + 'px';
-        pageDiv.style.height = viewport.height + 'px';
+        // Use CSS/Display size for the container
+        pageDiv.style.width = displayViewport.width + 'px';
+        pageDiv.style.height = displayViewport.height + 'px';
         
         const canvas = document.createElement('canvas');
         canvas.className = 'pdf-canvas';
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        // Use Render/Pixel size for the canvas attributes
+        canvas.width = renderViewport.width;
+        canvas.height = renderViewport.height;
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
         
         const highlightLayer = document.createElement('canvas');
         highlightLayer.className = 'layer';
         highlightLayer.id = 'highlight-' + pageNum;
-        highlightLayer.width = viewport.width;
-        highlightLayer.height = viewport.height;
+        highlightLayer.width = renderViewport.width;
+        highlightLayer.height = renderViewport.height;
+        highlightLayer.style.width = '100%';
+        highlightLayer.style.height = '100%';
         
         const drawLayer = document.createElement('canvas');
         drawLayer.className = 'layer draw-layer';
         drawLayer.id = 'draw-' + pageNum;
-        drawLayer.width = viewport.width;
-        drawLayer.height = viewport.height;
+        drawLayer.width = renderViewport.width;
+        drawLayer.height = renderViewport.height;
+        drawLayer.style.width = '100%';
+        drawLayer.style.height = '100%';
         
         // Setup Drawing Events for this layer
         setupDrawingEvents(drawLayer);
@@ -138,19 +146,24 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
     async function renderPage(num) {
       try {
           const page = await pdfDoc.getPage(num);
+          const pixelRatio = Math.min(window.devicePixelRatio || 1, 3); // Cap at 3x to save memory
           
           // Calculate scale to fit screen width
           const containerWidth = window.innerWidth - 20; // -20 padding
           const unscaledViewport = page.getViewport({scale: 1.0});
-          const newScale = containerWidth / unscaledViewport.width;
-          const viewport = page.getViewport({scale: newScale});
+          
+          const displayScale = containerWidth / unscaledViewport.width;
+          const renderScale = displayScale * pixelRatio;
+          
+          const displayViewport = page.getViewport({scale: displayScale});
+          const renderViewport = page.getViewport({scale: renderScale});
 
-          const { canvas, highlightLayer, drawLayer } = createPageElements(num, viewport);
+          const { canvas, highlightLayer, drawLayer } = createPageElements(num, renderViewport, displayViewport);
           
           const ctx = canvas.getContext('2d');
           const renderContext = {
             canvasContext: ctx,
-            viewport: viewport
+            viewport: renderViewport
           };
           
           await page.render(renderContext).promise;
@@ -179,30 +192,41 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
         ctx.lineCap = 'round';
         ctx.lineWidth = 3;
         
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Map screen pixels to canvas high-res pixels
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            return {
+                x: (e.touches[0].clientX - rect.left) * scaleX,
+                y: (e.touches[0].clientY - rect.top) * scaleY
+            };
+        };
+        
         canvas.addEventListener('touchstart', (e) => {
             if (!drawingEnabled) return;
             isDrawing = true;
-            const rect = canvas.getBoundingClientRect();
-            lastX = e.touches[0].clientX - rect.left;
-            lastY = e.touches[0].clientY - rect.top;
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
             ctx.strokeStyle = drawColor;
-            e.preventDefault(); 
+            // IMPORTANT: If we are drawing, we MUST preventDefault to stop scrolling
+            if(drawingEnabled) e.preventDefault(); 
         }, {passive: false});
 
         canvas.addEventListener('touchmove', (e) => {
             if (!isDrawing || !drawingEnabled) return;
-            const rect = canvas.getBoundingClientRect();
-            const x = e.touches[0].clientX - rect.left;
-            const y = e.touches[0].clientY - rect.top;
+            const pos = getPos(e);
             
             ctx.beginPath();
             ctx.moveTo(lastX, lastY);
-            ctx.lineTo(x, y);
+            ctx.lineTo(pos.x, pos.y);
             ctx.stroke();
             
-            lastX = x;
-            lastY = y;
-            e.preventDefault();
+            lastX = pos.x;
+            lastY = pos.y;
+            if(drawingEnabled) e.preventDefault();
         }, {passive: false});
 
         canvas.addEventListener('touchend', () => isDrawing = false);
