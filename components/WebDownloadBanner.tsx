@@ -20,7 +20,7 @@ export default function WebDownloadBanner() {
 
   const handleDownload = () => {
     // Link de Dropbox proporcionado
-    const apkUrl = 'https://www.dropbox.com/scl/fi/9ljscp5e983b9cu2mx9y0/app-release.apk?rlkey=uq23q418dy1h275x018hn3els&st=l7fz1515&dl=1';
+    const apkUrl = 'https://www.dropbox.com/scl/fi/9ljscp5e983b9cu2mx9y0/app-release.apk?rlkey=uq23q418dy1h275x018hn3els&st=1n4xmiag&dl=1';
     window.location.href = apkUrl; 
   };
 
