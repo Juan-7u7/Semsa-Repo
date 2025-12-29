@@ -27,6 +27,7 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [drawColor, setDrawColor] = useState('#FF0000');
   const [pdfData, setPdfData] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
   
   // Search State
   const [totalMatches, setTotalMatches] = useState(0);
@@ -34,13 +35,15 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
 
   useEffect(() => {
     const loadPdf = async () => {
-      // ... (existing code omitted for brevity, keeping it same)
       if (!uri) return;
+      // console.log('Loading PDF URI:', uri);
       if (uri.startsWith('file://')) {
         try {
+          // Use legacy or standard import
           const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
           setPdfData(`data:application/pdf;base64,${base64}`);
         } catch (e) {
+            console.error('Error reading file:', e);
             setPdfData(uri);
         }
       } else {
@@ -49,6 +52,14 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
     };
     loadPdf();
   }, [uri]);
+
+   // Send PDF data when ready
+   useEffect(() => {
+    if (pdfData && isReady && webViewRef.current) {
+        // console.log('Sending PDF data to WebView');
+        webViewRef.current.postMessage(JSON.stringify({ type: 'init_pdf', data: pdfData }));
+    }
+  }, [pdfData, isReady]);
 
   // Construcción del HTML visor
   const viewerHtml = React.useMemo(() => `
@@ -337,11 +348,16 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
     window.nextMatch = nextMatch;
     window.prevMatch = prevMatch;
     window.setDrawingMode = setDrawingMode;
+    
+    // Notify Ready
+    setTimeout(function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'ready' }));
+    }, 500);
   </script>
 </body>
 </html>
   `, []);
-  
+
   // Scripts para inyectar acciones
   const injectDrawToggle = (enabled: boolean, color: string) => {
     return `setDrawingMode(${enabled}, '${color}'); true;`;
@@ -353,10 +369,6 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
   
   const injectSearchNav = (dir: 'next' | 'prev') => {
       return dir === 'next' ? 'window.nextMatch(); true;' : 'window.prevMatch(); true;';
-  };
-  
-  const injectPageNav = (dir: 'next' | 'prev') => {
-      return dir === 'next' ? 'onNextPage();' : 'onPrevPage();';
   };
 
   useEffect(() => {
@@ -379,6 +391,8 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
         } else if (data.type === 'search_result') {
             setTotalMatches(data.count);
             setCurrentMatchIndex(data.index);
+        } else if (data.type === 'ready') {
+            setIsReady(true);
         }
     } catch (e) {
         console.log('Error parsing WebView message', e);
@@ -475,11 +489,6 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
             allowFileAccess={true}
             allowUniversalAccessFromFileURLs={true}
             style={{ flex: 1, backgroundColor: '#525659' }}
-            onLoadEnd={() => {
-                   if (pdfData) {
-                       webViewRef.current?.postMessage(JSON.stringify({ type: 'init_pdf', data: pdfData }));
-                   }
-            }}
           />
           
           {loading && (
