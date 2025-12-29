@@ -2,7 +2,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /**
  * Pantalla de Ayuda e Instrucciones
@@ -112,6 +112,48 @@ export default function HelpScreen() {
               </View>
             </View>
           ))}
+
+          {/* Descarga Android (Solo Web) */}
+          {Platform.OS === 'web' && (
+            <>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                    Descarga la App
+                </Text>
+                <View style={[styles.featureCard, { backgroundColor: colors.backgroundSecondary, borderColor: '#3DDC84', borderWidth: 1 }]}>
+                    <View style={[styles.featureIcon, { backgroundColor: 'rgba(61, 220, 132, 0.15)' }]}>
+                        <FontAwesome name="android" size={28} color="#3DDC84" />
+                    </View>
+                    <View style={styles.featureContent}>
+                        <Text style={[styles.featureTitle, { color: colors.text }]}>
+                            Versión Nativa
+                        </Text>
+                        <Text style={[styles.featureDescription, { color: colors.textSecondary }]}>
+                            Obtén la mejor experiencia descargando nuestra aplicación para Android.
+                        </Text>
+                        <TouchableOpacity
+                            style={{
+                                marginTop: 12,
+                                backgroundColor: '#3DDC84',
+                                paddingVertical: 8,
+                                paddingHorizontal: 16,
+                                borderRadius: 8,
+                                alignSelf: 'flex-start',
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 8
+                            }}
+                            onPress={() => {
+                                // Link de Dropbox proporcionado
+                                window.location.href = 'https://www.dropbox.com/scl/fi/9ljscp5e983b9cu2mx9y0/app-release.apk?rlkey=uq23q418dy1h275x018hn3els&st=1n4xmiag&dl=1';
+                            }}
+                        >
+                            <FontAwesome name="download" size={14} color="white" />
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Descargar APK</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </>
+          )}
 
           {/* Pasos rápidos */}
           <Text style={[styles.sectionTitle, { color: colors.text }]}>

@@ -7,7 +7,6 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
-import WebDownloadBanner from '@/components/WebDownloadBanner';
 import { FavoritosProvider } from '@/contexts/FavoritosContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
@@ -92,8 +91,8 @@ function NavigationWrapper() {
         <Stack.Screen name="help" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="reader" options={{ headerShown: false }} />
       </Stack>
-      {/* Banner de descarga solo visible en Web */}
-      <WebDownloadBanner />
+      {/* Banner de descarga solo visible en Web (REMOVIDO por solicitud) */}
+      {/* <WebDownloadBanner /> */}
     </NavigationThemeProvider>
   );
 }
