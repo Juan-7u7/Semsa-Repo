@@ -27,6 +27,7 @@ export interface ThemeColors {
   primaryLight: string;
   primaryDark: string;
   primarySubtle: string;
+  tint: string; // Added tint for compatibility
   
   // Estados
   success: string;
@@ -76,6 +77,7 @@ const Colors: Record<ColorScheme, ThemeColors> = {
     primaryLight: '#FFC933',        // Amarillo claro
     primaryDark: '#E6A600',         // Amarillo oscuro
     primarySubtle: '#FFF8E6',       // Amarillo muy sutil
+    tint: '#FFB800',                // Added tint
     
     // Estados
     success: '#10B981',             // Verde
@@ -124,6 +126,7 @@ const Colors: Record<ColorScheme, ThemeColors> = {
     primaryLight: '#FFC933',        // Amarillo claro
     primaryDark: '#E6A600',         // Amarillo oscuro
     primarySubtle: '#2A2410',       // Amarillo muy sutil
+    tint: '#FFB800',                // Added tint
     
     // Estados
     success: '#10B981',             // Verde
