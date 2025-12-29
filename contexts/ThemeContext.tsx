@@ -55,6 +55,19 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [deviceColorScheme]);
 
+  // Web: Actualizar el color de fondo del body
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+       const bg = Colors[colorScheme].background;
+       document.body.style.backgroundColor = bg;
+       // También asegurar que el root tenga altura completa
+       if(document.getElementById('root')) {
+           document.getElementById('root')!.style.minHeight = '100vh';
+           document.getElementById('root')!.style.backgroundColor = bg;
+       }
+    }
+  }, [colorScheme]);
+
   // Listener explícito para Web para garantizar respuesta inmediata
   useEffect(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
