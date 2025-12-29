@@ -48,12 +48,43 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return Appearance.getColorScheme() ?? 'light';
   });
 
-  // Sincronizar con el tema del dispositivo
+  // Sincronizar con el tema del dispositivo (Nativo)
   useEffect(() => {
-    if (deviceColorScheme) {
+    if (deviceColorScheme && Platform.OS !== 'web') {
       setColorScheme(deviceColorScheme);
     }
   }, [deviceColorScheme]);
+
+  // Listener explícito para Web para garantizar respuesta inmediata
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      
+      const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+         // handle various browser implementations
+         const isDark = e instanceof MediaQueryList ? e.matches : e.matches;
+         setColorScheme(isDark ? 'dark' : 'light');
+      };
+
+      // Listener inicial por si acaso
+      if (mediaQuery.matches !== (colorScheme === 'dark')) {
+         setColorScheme(mediaQuery.matches ? 'dark' : 'light');
+      }
+
+      // Modern vs Legacy listeners
+      try {
+        if (mediaQuery.addEventListener) {
+          mediaQuery.addEventListener('change', handleChange);
+          return () => mediaQuery.removeEventListener('change', handleChange);
+        } else if (mediaQuery.addListener) {
+          mediaQuery.addListener(handleChange);
+          return () => mediaQuery.removeListener(handleChange);
+        }
+      } catch (e) {
+        console.warn('Error adding theme listener:', e);
+      }
+    }
+  }, []);
 
   // Obtener los colores según el tema actual
   const colors = Colors[colorScheme];
