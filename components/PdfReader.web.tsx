@@ -67,9 +67,9 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
     let pdfDoc = null;
     let searchMatches = [];
     let currentMatchIndex = -1;
+    let currentSearchQuery = '';
     
     // Draw Config
-    let currentSearchQuery = '';
     let isDrawing = false;
     let drawingEnabled = false;
     let drawColor = '#FF0000';
