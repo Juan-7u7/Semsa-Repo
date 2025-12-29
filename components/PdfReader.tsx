@@ -28,6 +28,7 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
   const [drawColor, setDrawColor] = useState('#FF0000');
   const [pdfData, setPdfData] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [searching, setSearching] = useState(false); // Loading state for search
   
   // Search State
   const [totalMatches, setTotalMatches] = useState(0);
@@ -244,7 +245,10 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
 
     // --- Search Logic ---
     async function performSearch(query) {
-       if (!query || query.length < 3) return;
+       if (!query || query.length < 3) {
+           sendSearchStatus(); // Send status even if query is too short
+           return;
+       }
        
        searchMatches = [];
        currentMatchIndex = -1;
@@ -295,10 +299,12 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
            // Need viewport for this page
            const page = await pdfDoc.getPage(match.pageNum);
            // Recalculate scale (same as render logic)
+           const pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
            const containerWidth = window.innerWidth - 20;
            const unscaledViewport = page.getViewport({scale: 1.0});
-           const newScale = containerWidth / unscaledViewport.width;
-           const viewport = page.getViewport({scale: newScale});
+           const displayScale = containerWidth / unscaledViewport.width;
+           const renderScale = displayScale * pixelRatio; // Use renderScale for highlight canvas
+           const viewport = page.getViewport({scale: renderScale});
            
            drawHighlightOnCanvas(ctx, match.item, viewport);
        }
@@ -307,7 +313,6 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
     function drawHighlightOnCanvas(ctx, item, viewport) {
        // Clear specific highlight if needed, but we might want multiple. 
        // For now clear all on this page to be simple or keep adding? 
-       // Let's clear for "current match" mode, but maybe we want "find all" visual? 
        // Requirements said "next/prev", so focus mode is best.
        ctx.clearRect(0,0, ctx.canvas.width, ctx.canvas.height);
 
@@ -322,8 +327,8 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
        const width = Math.abs(rect[2] - rect[0]);
        const height = Math.abs(rect[3] - rect[1]);
 
-       ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
-       ctx.fillRect(minX, minY - height, width, height * 1.5);
+       ctx.fillStyle = 'rgba(255, 223, 0, 0.5)'; // Yellow
+       ctx.fillRect(minX, minY, width, height);
     }
     
     function nextMatch() {
@@ -415,12 +420,19 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
         } else if (data.type === 'search_result') {
             setTotalMatches(data.count);
             setCurrentMatchIndex(data.index);
+            setSearching(false); // Stop loading
         } else if (data.type === 'ready') {
             setIsReady(true);
         }
     } catch (e) {
         console.log('Error parsing WebView message', e);
     }
+  };
+
+  const submitSearch = () => {
+    if(!searchQuery) return;
+    setSearching(true);
+    webViewRef.current?.injectJavaScript(injectSearch(searchQuery));
   };
 
   return (
@@ -435,7 +447,7 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
         <View style={styles.headerInfo}>
            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>{title || 'Manual'}</Text>
            <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-             Página {currentPage} de {totalPages || '-'}
+             {totalPages > 0 ? `Página ${currentPage} de ${totalPages}` : 'Cargando...'}
            </Text>
         </View>
         
@@ -465,7 +477,7 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
               placeholderTextColor={colors.textSecondary || '#999'}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              onSubmitEditing={() => webViewRef.current?.injectJavaScript(injectSearch(searchQuery))}
+              onSubmitEditing={submitSearch}
            />
            {totalMatches > 0 && (
                <Text style={{fontSize: 12, color: colors.textSecondary, marginRight: 8}}>
@@ -480,8 +492,16 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
                <FontAwesome name="chevron-down" size={14} color={colors.text} />
            </TouchableOpacity>
            <View style={{width:8}} />
-           <TouchableOpacity style={[styles.actionButtonSmall, {backgroundColor: colors.primary}]} onPress={() => webViewRef.current?.injectJavaScript(injectSearch(searchQuery))}>
-               <FontAwesome name="search" size={14} color="#000" />
+           <TouchableOpacity 
+                style={[styles.actionButtonSmall, {backgroundColor: colors.primary}]} 
+                onPress={submitSearch}
+                disabled={searching}
+           >
+               {searching ? (
+                   <ActivityIndicator size="small" color="#000" />
+               ) : (
+                   <FontAwesome name="search" size={14} color="#000" />
+               )}
            </TouchableOpacity>
         </View>
       )}

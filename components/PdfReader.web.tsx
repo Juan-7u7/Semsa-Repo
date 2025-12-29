@@ -321,8 +321,8 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
        const width = Math.abs(rect[2] - rect[0]);
        const height = Math.abs(rect[3] - rect[1]);
 
-       ctx.fillStyle = 'rgba(255, 184, 0, 0.4)';
-       ctx.fillRect(minX, minY - height, width, height * 1.5);
+       ctx.fillStyle = 'rgba(255, 223, 0, 0.5)';
+       ctx.fillRect(minX, minY, width, height);
     }
 
     // --- Comunicación ---
