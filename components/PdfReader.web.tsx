@@ -45,144 +45,186 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=3">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
   <style>
-    body { margin: 0; background: #525659; overflow: auto; }
-    #container { position: relative; width: 100%; min-height: 100vh; display: flex; justify-content: center; }
-    #wrapper { position: relative; }
-    #pdf-render { display: block; }
-    #highlight-layer, #canvas-layer { 
-      position: absolute; 
-      top: 0; left: 0; 
-      pointer-events: none;
-    }
+    body { margin: 0; background: #525659; overflow-y: auto; }
+    #container { display: flex; flex-direction: column; align-items: center; padding: 10px 0; }
+    .page-container { position: relative; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: white; }
+    .pdf-canvas { display: block; }
+    .layer { position: absolute; top: 0; left: 0; pointer-events: none; }
     #highlight-layer { z-index: 5; }
-    #canvas-layer { z-index: 10; }
+    .draw-layer { z-index: 10; pointer-events: none; }
+    .draw-layer.active { pointer-events: auto; }
   </style>
 </head>
 <body>
-  <div id="container">
-    <div id="wrapper">
-      <canvas id="pdf-render"></canvas>
-      <canvas id="highlight-layer"></canvas>
-      <canvas id="canvas-layer"></canvas>
-    </div>
-  </div>
+  <div id="container"></div>
 
   <script>
     const url = '${pdfUrl || ''}'; 
     let pdfDoc = null;
-    let pageNum = 1;
-    let pageRendering = false;
-    let pageNumPending = null;
-    let scale = 1.5;
-    
-    // Canvases
-    const canvas = document.getElementById('pdf-render');
-    const ctx = canvas.getContext('2d');
-    const highlightCanvas = document.getElementById('highlight-layer');
-    const highlightCtx = highlightCanvas.getContext('2d');
-    const drawCanvas = document.getElementById('canvas-layer');
-    const drawCtx = drawCanvas.getContext('2d');
-    
-    // State
-    let currentViewport = null;
     let searchMatches = [];
     let currentMatchIndex = -1;
-    let pendingHighlight = null;
     
     // Draw Config
     let isDrawing = false;
     let drawingEnabled = false;
+    let drawColor = '#FF0000';
     let lastX = 0;
     let lastY = 0;
-    drawCtx.lineJoin = 'round';
-    drawCtx.lineCap = 'round';
-    drawCtx.lineWidth = 3;
-    drawCtx.strokeStyle = '#FF0000';
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-    function renderPage(num) {
-      pageRendering = true;
-      pdfDoc.getPage(num).then(function(page) {
-        const pixelRatio = window.devicePixelRatio || 1;
-        const desiredWidth = Math.min(window.innerWidth * 0.95, 800);
-        const viewport = page.getViewport({scale: 1.0});
-        const scale = (desiredWidth / viewport.width) * pixelRatio;
-        const scaledViewport = page.getViewport({scale: scale});
-        currentViewport = scaledViewport;
-
-        // Resize all (Internal resolution)
-        canvas.height = scaledViewport.height;
-        canvas.width = scaledViewport.width;
-        highlightCanvas.height = scaledViewport.height;
-        highlightCanvas.width = scaledViewport.width;
-        drawCanvas.height = scaledViewport.height;
-        drawCanvas.width = scaledViewport.width;
-
-        // CSS Size (Display size)
-        const displayWidth = desiredWidth + 'px';
-        const displayHeight = (scaledViewport.height / pixelRatio) + 'px';
+    
+    function createPageElements(pageNum, viewport) {
+        const container = document.getElementById('container');
         
-        [canvas, highlightCanvas, drawCanvas].forEach(c => {
-            c.style.width = displayWidth;
-            c.style.height = displayHeight;
-        });
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page-container';
+        pageDiv.id = 'page-' + pageNum;
         
-        highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-canvas';
+        
+        const highlightLayer = document.createElement('canvas');
+        highlightLayer.className = 'layer';
+        highlightLayer.id = 'highlight-' + pageNum;
+        
+        const drawLayer = document.createElement('canvas');
+        drawLayer.className = 'layer draw-layer';
+        drawLayer.id = 'draw-' + pageNum;
+        
+        // Setup Drawing Events
+        setupDrawingEvents(drawLayer);
 
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: scaledViewport
-        };
-        const renderTask = page.render(renderContext);
-
-        renderTask.promise.then(function() {
-          pageRendering = false;
-          sendMessage({ type: 'page_changed', page: num });
-          if (pageNumPending !== null) {
-            renderPage(pageNumPending);
-            pageNumPending = null;
-          } else if (pendingHighlight && pendingHighlight.pageNum === num) {
-             drawHighlight(pendingHighlight.item);
-             pendingHighlight = null;
-          } else if (currentMatchIndex >= 0 && searchMatches[currentMatchIndex].pageNum === num) {
-             drawHighlight(searchMatches[currentMatchIndex].item);
-          }
-        });
-      });
-      sendMessage({ type: 'meta', page: num, total: pdfDoc.numPages });
+        pageDiv.appendChild(canvas);
+        pageDiv.appendChild(highlightLayer);
+        pageDiv.appendChild(drawLayer);
+        container.appendChild(pageDiv);
+        
+        return { canvas, highlightLayer, drawLayer, pageDiv };
     }
 
-    function queueRenderPage(num) {
-      if (pageRendering) {
-        pageNumPending = num;
-      } else {
-        renderPage(num);
+    async function renderPage(num) {
+      try {
+          const page = await pdfDoc.getPage(num);
+          const pixelRatio = window.devicePixelRatio || 1;
+          
+          // Calculate scale to fit container (max 800px or full width)
+          const availableWidth = Math.min(window.innerWidth * 0.95, 800);
+          const unscaledViewport = page.getViewport({scale: 1.0});
+          const scale = (availableWidth / unscaledViewport.width) * pixelRatio;
+          const viewport = page.getViewport({scale: scale});
+
+          const { canvas, highlightLayer, drawLayer, pageDiv } = createPageElements(num, viewport);
+          
+          // Set visual size
+          const cssWidth = (viewport.width / pixelRatio) + 'px';
+          const cssHeight = (viewport.height / pixelRatio) + 'px';
+          
+          pageDiv.style.width = cssWidth;
+          pageDiv.style.height = cssHeight;
+          
+          [canvas, highlightLayer, drawLayer].forEach(c => {
+             c.width = viewport.width;
+             c.height = viewport.height;
+             c.style.width = '100%';
+             c.style.height = '100%';
+          });
+
+          const ctx = canvas.getContext('2d');
+          const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+          };
+          
+          await page.render(renderContext).promise;
+          return true;
+      } catch(e) {
+          console.error(e);
       }
     }
-
-    function onPrevPage() {
-      if (pageNum <= 1) return;
-      pageNum--;
-      queueRenderPage(pageNum);
-    }
-
-    function onNextPage() {
-      if (pageNum >= pdfDoc.numPages) return;
-      pageNum++;
-      queueRenderPage(pageNum);
+    
+    async function renderAllPages() {
+        // Clear container
+        document.getElementById('container').innerHTML = '';
+        
+        for(let i=1; i<=pdfDoc.numPages; i++) {
+            await renderPage(i);
+        }
+        sendMessage({ type: 'loaded', total: pdfDoc.numPages });
     }
 
     if (url) {
         pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
           pdfDoc = pdfDoc_;
-          renderPage(pageNum);
-          sendMessage({ type: 'loaded', total: pdfDoc.numPages });
+          renderAllPages();
         });
+    }
+    
+    // --- Draw Logic ---
+    function setupDrawingEvents(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 3;
+        
+        const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            // Scale coords since canvas is high-res
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        };
+        
+        const start = (e) => {
+            if(!drawingEnabled) return;
+            isDrawing = true;
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            ctx.strokeStyle = drawColor;
+            if(e.type === 'touchstart') e.preventDefault();
+        };
+        
+        const move = (e) => {
+            if(!isDrawing || !drawingEnabled) return;
+            const pos = getPos(e);
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            
+            lastX = pos.x;
+            lastY = pos.y;
+             if(e.type === 'touchmove') e.preventDefault();
+        };
+
+        const end = () => isDrawing = false;
+        
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('touchstart', start, {passive: false});
+        canvas.addEventListener('mousemove', move);
+        canvas.addEventListener('touchmove', move, {passive: false});
+        canvas.addEventListener('mouseup', end);
+        canvas.addEventListener('touchend', end);
+    }
+    
+    function setDrawingMode(enabled, color) {
+        drawingEnabled = enabled;
+        if(color) drawColor = color;
+        const layers = document.getElementsByClassName('draw-layer');
+        for(let l of layers) l.style.pointerEvents = enabled ? 'auto' : 'none';
+        document.body.style.overflowY = enabled ? 'hidden' : 'auto'; // Disable scroll when drawing
     }
     
     // --- Search ---
@@ -191,6 +233,15 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
        
        searchMatches = [];
        currentMatchIndex = -1;
+       
+        // Clear previous highlights
+       const highlights = document.getElementsByClassName('layer');
+       for(let h of highlights) {
+           if(h.id.startsWith('highlight-')) {
+               const ctx = h.getContext('2d');
+               ctx.clearRect(0,0, h.width, h.height);
+           }
+       }
        
        for (let i = 1; i <= pdfDoc.numPages; i++) {
           try {
@@ -236,81 +287,43 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
         });
     }
 
-    function showMatch(match) {
-       if (pageNum !== match.pageNum) {
-          pageNum = match.pageNum;
-          pendingHighlight = match;
-          renderPage(pageNum);
-       } else {
-          drawHighlight(match.item);
+    async function showMatch(match) {
+        const pageDiv = document.getElementById('page-' + match.pageNum);
+       if (pageDiv) {
+           pageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+           
+           const highlightCanvas = document.getElementById('highlight-' + match.pageNum);
+           const ctx = highlightCanvas.getContext('2d');
+           
+           const page = await pdfDoc.getPage(match.pageNum);
+           const pixelRatio = window.devicePixelRatio || 1;
+           const availableWidth = Math.min(window.innerWidth * 0.95, 800);
+           const unscaledViewport = page.getViewport({scale: 1.0});
+           const scale = (availableWidth / unscaledViewport.width) * pixelRatio;
+           const viewport = page.getViewport({scale: scale});
+           
+           drawHighlight(ctx, match.item, viewport);
        }
     }
 
-    function drawHighlight(item) {
-       if (!currentViewport) return;
-       highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+    function drawHighlight(ctx, item, viewport) {
+        // Clear only this highlight? Or keep? Let's clear for now
+       ctx.clearRect(0,0, ctx.canvas.width, ctx.canvas.height);
        
        const x = item.transform[4];
        const y = item.transform[5];
        const w = item.width * (item.transform[0] || 1); 
        const h = item.transform[3] || 12;
        
-       const rect = currentViewport.convertToViewportRectangle([x, y, x + item.width, y + h]);
+       const rect = viewport.convertToViewportRectangle([x, y, x + item.width, y + h]);
        const minX = Math.min(rect[0], rect[2]);
        const minY = Math.min(rect[1], rect[3]);
        const width = Math.abs(rect[2] - rect[0]);
        const height = Math.abs(rect[3] - rect[1]);
 
-       highlightCtx.fillStyle = 'rgba(255, 255, 0, 0.4)';
-       highlightCtx.fillRect(minX, minY - height, width, height * 1.5);
+       ctx.fillStyle = 'rgba(255, 184, 0, 0.4)';
+       ctx.fillRect(minX, minY - height, width, height * 1.5);
     }
-
-    // --- Dibujo ---
-    function setDrawingMode(enabled, color) {
-        drawingEnabled = enabled;
-        drawCanvas.style.pointerEvents = enabled ? 'auto' : 'none';
-        if(color) drawCtx.strokeStyle = color;
-    }
-
-    function startDraw(e) {
-        if (!drawingEnabled) return;
-        isDrawing = true;
-        const rect = drawCanvas.getBoundingClientRect();
-        // Soporte Touch y Mouse
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        lastX = clientX - rect.left;
-        lastY = clientY - rect.top;
-    }
-
-    function moveDraw(e) {
-        if (!isDrawing || !drawingEnabled) return;
-        const rect = drawCanvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
-        
-        drawCtx.beginPath();
-        drawCtx.moveTo(lastX, lastY);
-        drawCtx.lineTo(x, y);
-        drawCtx.stroke();
-        
-        lastX = x;
-        lastY = y;
-    }
-    
-    function endDraw() { isDrawing = false; }
-
-    drawCanvas.addEventListener('mousedown', startDraw);
-    drawCanvas.addEventListener('touchstart', startDraw, {passive: false});
-
-    drawCanvas.addEventListener('mousemove', moveDraw);
-    drawCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); moveDraw(e); }, {passive: false});
-
-    drawCanvas.addEventListener('mouseup', endDraw);
-    drawCanvas.addEventListener('touchend', endDraw);
-    drawCanvas.addEventListener('mouseout', endDraw);
 
     // --- Comunicación ---
     function sendMessage(data) {
@@ -328,9 +341,6 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
                 nextMatch();
             } else if (msg.type === 'search_prev') {
                 prevMatch();
-            } else if (msg.type === 'nav') {
-                if (msg.dir === 'next') onNextPage();
-                else if (msg.dir === 'prev') onPrevPage();
             }
         } catch(e) {}
     });
@@ -466,16 +476,7 @@ export default function PdfReaderWeb({ uri, title, id }: PdfReaderProps) {
             </View>
         )}
 
-          {/* Navegación flotante simple para demo */}
-          <View style={styles.floatingNav as any}>
-              <TouchableOpacity onPress={() => sendMessageToIframe({ type: 'nav', dir: 'prev' })} style={styles.navBtn as any}>
-                 <FontAwesome name="chevron-left" size={24} color="#fff" />
-              </TouchableOpacity>
-              <View style={{width: 20}} />
-              <TouchableOpacity onPress={() => sendMessageToIframe({ type: 'nav', dir: 'next' })} style={styles.navBtn as any}>
-                 <FontAwesome name="chevron-right" size={24} color="#fff" />
-              </TouchableOpacity>
-          </View>
+
       </View>
     </View>
   );

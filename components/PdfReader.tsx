@@ -59,137 +59,173 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js"></script>
   <style>
-    body { margin: 0; background: #525659; overflow: auto; -webkit-touch-callout: none; }
-    #container { position: relative; width: 100%; min-height: 100vh; }
-    #pdf-render { width: 100%; display: block; }
-    #highlight-layer, #canvas-layer { 
-      position: absolute; 
-      top: 0; left: 0; 
-      pointer-events: none;
-    }
+    body { margin: 0; background: #525659; overflow-y: auto; -webkit-touch-callout: none; }
+    #container { display: flex; flex-direction: column; align-items: center; padding: 10px 0; }
+    .page-container { position: relative; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); background: white; }
+    .pdf-canvas { display: block; }
+    .layer { position: absolute; top: 0; left: 0; pointer-events: none; }
     #highlight-layer { z-index: 5; }
-    #canvas-layer { z-index: 10; }
+    .draw-layer { z-index: 10; pointer-events: none; }
+    .draw-layer.active { pointer-events: auto; }
   </style>
 </head>
 <body>
-  <div id="container">
-    <canvas id="pdf-render"></canvas>
-    <canvas id="highlight-layer"></canvas>
-    <canvas id="canvas-layer"></canvas>
-  </div>
+  <div id="container"></div>
 
   <script>
-    const url = '${pdfData || ''}'; 
     let pdfDoc = null;
-    let pageNum = 1;
-    let pageRendering = false;
-    let pageNumPending = null;
     let scale = 1.5;
-    
-    // Canvases
-    const canvas = document.getElementById('pdf-render');
-    const ctx = canvas.getContext('2d');
-    const highlightCanvas = document.getElementById('highlight-layer');
-    const highlightCtx = highlightCanvas.getContext('2d');
-    const drawCanvas = document.getElementById('canvas-layer');
-    const drawCtx = drawCanvas.getContext('2d');
-    
-    // State
-    let currentViewport = null;
     let searchMatches = [];
     let currentMatchIndex = -1;
-    let pendingHighlight = null; // { pageNum, item }
     
-    // Config
+    // Config Drawing
     let isDrawing = false;
     let drawingEnabled = false;
+    let drawColor = '#FF0000';
     let lastX = 0;
     let lastY = 0;
-    drawCtx.lineJoin = 'round';
-    drawCtx.lineCap = 'round';
-    drawCtx.lineWidth = 3;
-    drawCtx.strokeStyle = '#FF0000';
 
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    function renderPage(num) {
-      pageRendering = true;
-      pdfDoc.getPage(num).then(function(page) {
-        const viewport = page.getViewport({scale: scale});
-        const containerWidth = document.body.clientWidth;
-        const newScale = (containerWidth / page.getViewport({scale: 1.0}).width);
-        const scaledViewport = page.getViewport({scale: newScale});
-        currentViewport = scaledViewport;
-
-        canvas.height = scaledViewport.height;
-        canvas.width = scaledViewport.width;
-        highlightCanvas.height = scaledViewport.height;
-        highlightCanvas.width = scaledViewport.width;
-        drawCanvas.height = scaledViewport.height;
-        drawCanvas.width = scaledViewport.width;
+    function createPageElements(pageNum, viewport) {
+        const container = document.getElementById('container');
         
-        highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'page-container';
+        pageDiv.id = 'page-' + pageNum;
+        pageDiv.style.width = viewport.width + 'px';
+        pageDiv.style.height = viewport.height + 'px';
+        
+        const canvas = document.createElement('canvas');
+        canvas.className = 'pdf-canvas';
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        const highlightLayer = document.createElement('canvas');
+        highlightLayer.className = 'layer';
+        highlightLayer.id = 'highlight-' + pageNum;
+        highlightLayer.width = viewport.width;
+        highlightLayer.height = viewport.height;
+        
+        const drawLayer = document.createElement('canvas');
+        drawLayer.className = 'layer draw-layer';
+        drawLayer.id = 'draw-' + pageNum;
+        drawLayer.width = viewport.width;
+        drawLayer.height = viewport.height;
+        
+        // Setup Drawing Events for this layer
+        setupDrawingEvents(drawLayer);
 
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: scaledViewport
-        };
-        const renderTask = page.render(renderContext);
-
-        renderTask.promise.then(function() {
-          pageRendering = false;
-          window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'page_changed', page: num }));
-          
-          if (pageNumPending !== null) {
-            renderPage(pageNumPending);
-            pageNumPending = null;
-          } else if (pendingHighlight && pendingHighlight.pageNum === num) {
-             drawHighlight(pendingHighlight.item);
-             pendingHighlight = null;
-          } else if (currentMatchIndex >= 0 && searchMatches[currentMatchIndex].pageNum === num) {
-             // Redraw current match if on same page
-             drawHighlight(searchMatches[currentMatchIndex].item);
-          }
-        });
-      });
-      
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'meta', page: num, total: pdfDoc.numPages }));
+        pageDiv.appendChild(canvas);
+        pageDiv.appendChild(highlightLayer);
+        pageDiv.appendChild(drawLayer);
+        container.appendChild(pageDiv);
+        
+        return { canvas, highlightLayer, drawLayer };
     }
 
-    function queueRenderPage(num) {
-      if (pageRendering) {
-        pageNumPending = num;
-      } else {
-        renderPage(num);
+    async function renderPage(num) {
+      try {
+          const page = await pdfDoc.getPage(num);
+          
+          // Calculate scale to fit screen width
+          const containerWidth = window.innerWidth - 20; // -20 padding
+          const unscaledViewport = page.getViewport({scale: 1.0});
+          const newScale = containerWidth / unscaledViewport.width;
+          const viewport = page.getViewport({scale: newScale});
+
+          const { canvas, highlightLayer, drawLayer } = createPageElements(num, viewport);
+          
+          const ctx = canvas.getContext('2d');
+          const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+          };
+          
+          await page.render(renderContext).promise;
+          return true;
+      } catch(e) {
+          console.error(e);
+          return false;
       }
     }
 
-    function onPrevPage() {
-      if (pageNum <= 1) return;
-      pageNum--;
-      queueRenderPage(pageNum);
+    async function renderAllPages() {
+        if (!pdfDoc) return;
+        document.getElementById('container').innerHTML = ''; // Clear
+        
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            await renderPage(i);
+            // Notify progress periodically or at end?
+        }
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'loaded', total: pdfDoc.numPages }));
     }
 
-    function onNextPage() {
-      if (pageNum >= pdfDoc.numPages) return;
-      pageNum++;
-      queueRenderPage(pageNum);
+    // --- Drawing Logic ---
+    function setupDrawingEvents(canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 3;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            if (!drawingEnabled) return;
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.touches[0].clientX - rect.left;
+            lastY = e.touches[0].clientY - rect.top;
+            ctx.strokeStyle = drawColor;
+            e.preventDefault(); 
+        }, {passive: false});
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (!isDrawing || !drawingEnabled) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.touches[0].clientX - rect.left;
+            const y = e.touches[0].clientY - rect.top;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            
+            lastX = x;
+            lastY = y;
+            e.preventDefault();
+        }, {passive: false});
+
+        canvas.addEventListener('touchend', () => isDrawing = false);
+    }
+    
+    function setDrawingMode(enabled, color) {
+        drawingEnabled = enabled;
+        if(color) drawColor = color;
+        
+        const layers = document.getElementsByClassName('draw-layer');
+        for(let layer of layers) {
+             layer.style.pointerEvents = enabled ? 'auto' : 'none';
+        }
     }
 
-    pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
-      pdfDoc = pdfDoc_;
-      renderPage(pageNum);
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'loaded', total: pdfDoc.numPages }));
-    });
-
-    // --- Búsqueda ---
+    // --- Search Logic ---
     async function performSearch(query) {
        if (!query || query.length < 3) return;
        
        searchMatches = [];
        currentMatchIndex = -1;
-       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'search_start', query: query }));
+       
+       // Clear previous highlights
+       const highlights = document.getElementsByClassName('layer');
+       for(let h of highlights) {
+           if(h.id.startsWith('highlight-')) {
+               const ctx = h.getContext('2d');
+               ctx.clearRect(0,0, h.width, h.height);
+           }
+       }
+       
+       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'search_start' }));
 
+       // Search in all pages
        for (let i = 1; i <= pdfDoc.numPages; i++) {
           try {
              const page = await pdfDoc.getPage(i);
@@ -206,12 +242,55 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
           currentMatchIndex = 0;
           showMatch(searchMatches[0]);
        } else {
-          alert('No se encontraron coincidencias');
+          // Alert native?
        }
        
        sendSearchStatus();
     }
 
+    async function showMatch(match) {
+       // Find page container and scroll to it
+       const pageDiv = document.getElementById('page-' + match.pageNum);
+       if (pageDiv) {
+           pageDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+           
+           // Draw highlight
+           const highlightCanvas = document.getElementById('highlight-' + match.pageNum);
+           const ctx = highlightCanvas.getContext('2d');
+           // Need viewport for this page
+           const page = await pdfDoc.getPage(match.pageNum);
+           // Recalculate scale (same as render logic)
+           const containerWidth = window.innerWidth - 20;
+           const unscaledViewport = page.getViewport({scale: 1.0});
+           const newScale = containerWidth / unscaledViewport.width;
+           const viewport = page.getViewport({scale: newScale});
+           
+           drawHighlightOnCanvas(ctx, match.item, viewport);
+       }
+    }
+
+    function drawHighlightOnCanvas(ctx, item, viewport) {
+       // Clear specific highlight if needed, but we might want multiple. 
+       // For now clear all on this page to be simple or keep adding? 
+       // Let's clear for "current match" mode, but maybe we want "find all" visual? 
+       // Requirements said "next/prev", so focus mode is best.
+       ctx.clearRect(0,0, ctx.canvas.width, ctx.canvas.height);
+
+       const x = item.transform[4];
+       const y = item.transform[5];
+       const w = item.width * (item.transform[0] || 1);
+       const h = item.transform[3] || 12; 
+       
+       const rect = viewport.convertToViewportRectangle([x, y, x + item.width, y + h]);
+       const minX = Math.min(rect[0], rect[2]);
+       const minY = Math.min(rect[1], rect[3]);
+       const width = Math.abs(rect[2] - rect[0]);
+       const height = Math.abs(rect[3] - rect[1]);
+
+       ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
+       ctx.fillRect(minX, minY - height, width, height * 1.5);
+    }
+    
     function nextMatch() {
         if (searchMatches.length === 0) return;
         currentMatchIndex = (currentMatchIndex + 1) % searchMatches.length;
@@ -230,83 +309,38 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
         window.ReactNativeWebView.postMessage(JSON.stringify({ 
             type: 'search_result', 
             count: searchMatches.length, 
-            index: currentMatchIndex + 1 // 1-based for UI
+            index: currentMatchIndex + 1 
         }));
     }
 
-    function showMatch(match) {
-       if (pageNum !== match.pageNum) {
-          pageNum = match.pageNum;
-          pendingHighlight = match;
-          renderPage(pageNum);
-       } else {
-          drawHighlight(match.item);
-       }
-    }
-
-    function drawHighlight(item) {
-       if (!currentViewport) return;
-       highlightCtx.clearRect(0, 0, highlightCanvas.width, highlightCanvas.height);
-       
-       const x = item.transform[4];
-       const y = item.transform[5];
-       const w = item.width * (item.transform[0] || 1);
-       const h = item.transform[3] || 12; // Height
-       
-       const rect = currentViewport.convertToViewportRectangle([x, y, x + item.width, y + h]);
-       const minX = Math.min(rect[0], rect[2]);
-       const minY = Math.min(rect[1], rect[3]);
-       const width = Math.abs(rect[2] - rect[0]);
-       const height = Math.abs(rect[3] - rect[1]);
-
-       highlightCtx.fillStyle = 'rgba(255, 255, 0, 0.4)';
-       highlightCtx.fillRect(minX, minY - height, width, height * 1.5);
-    }
+    // --- Message Handling ---
+    // Handle Android Message
+    document.addEventListener('message', handleMessage);
+    // Handle iOS Message
+    window.addEventListener('message', handleMessage);
     
-    // --- Lógica de Dibujo ---
-    function setDrawingMode(enabled, color) {
-        drawingEnabled = enabled;
-        drawCanvas.style.pointerEvents = enabled ? 'auto' : 'none';
-        if(color) drawCtx.strokeStyle = color;
+    function handleMessage(event) {
+        try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'init_pdf') {
+                pdfjsLib.getDocument(msg.data).promise.then(function(doc) {
+                    pdfDoc = doc;
+                    renderAllPages();
+                });
+            } else if (msg.type === 'search_start') {
+                performSearch(msg.query);
+            } // ... matches nav handling by existing window functions
+        } catch(e) {}
     }
-
-    drawCanvas.addEventListener('touchstart', (e) => {
-        if (!drawingEnabled) return;
-        isDrawing = true;
-        const rect = drawCanvas.getBoundingClientRect();
-        lastX = e.touches[0].clientX - rect.left;
-        lastY = e.touches[0].clientY - rect.top;
-        e.preventDefault(); 
-    }, {passive: false});
-
-    drawCanvas.addEventListener('touchmove', (e) => {
-        if (!isDrawing || !drawingEnabled) return;
-        const rect = drawCanvas.getBoundingClientRect();
-        const x = e.touches[0].clientX - rect.left;
-        const y = e.touches[0].clientY - rect.top;
-        
-        drawCtx.beginPath();
-        drawCtx.moveTo(lastX, lastY);
-        drawCtx.lineTo(x, y);
-        drawCtx.stroke();
-        
-        lastX = x;
-        lastY = y;
-        e.preventDefault();
-    }, {passive: false});
-
-    drawCanvas.addEventListener('touchend', () => isDrawing = false);
-    
-    // Handle Messages
-    window.addEventListener('message', (event) => {}); // RN handles injects directly but good practice
     
     window.performSearch = performSearch;
     window.nextMatch = nextMatch;
     window.prevMatch = prevMatch;
+    window.setDrawingMode = setDrawingMode;
   </script>
 </body>
 </html>
-  `, [pdfData]);
+  `, []);
   
   // Scripts para inyectar acciones
   const injectDrawToggle = (enabled: boolean, color: string) => {
@@ -431,33 +465,23 @@ export default function PdfReader({ uri, title, id }: PdfReaderProps) {
 
       {/* WebView PDF Viewer */}
       <View style={styles.webviewContainer}>
-          {pdfData ? (
-             <WebView
-               ref={webViewRef}
-               originWhitelist={['*']}
-               source={{ html: viewerHtml }}
-               onMessage={handleMessage}
-               javaScriptEnabled={true}
-               domStorageEnabled={true}
-               allowFileAccess={true}
-               allowUniversalAccessFromFileURLs={true}
-               style={{ flex: 1, backgroundColor: '#525659' }}
-             />
-          ) : (
-             <View style={{flex: 1, backgroundColor: '#525659'}} />
-          )}
+          <WebView
+            ref={webViewRef}
+            originWhitelist={['*']}
+            source={{ html: viewerHtml }}
+            onMessage={handleMessage}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            allowFileAccess={true}
+            allowUniversalAccessFromFileURLs={true}
+            style={{ flex: 1, backgroundColor: '#525659' }}
+            onLoadEnd={() => {
+                   if (pdfData) {
+                       webViewRef.current?.postMessage(JSON.stringify({ type: 'init_pdf', data: pdfData }));
+                   }
+            }}
+          />
           
-          {/* Navegación flotante simple para demo */}
-          <View style={styles.floatingNav}>
-              <TouchableOpacity onPress={() => webViewRef.current?.injectJavaScript(injectPageNav('prev'))} style={styles.navBtn}>
-                 <FontAwesome name="chevron-left" size={24} color="#fff" />
-              </TouchableOpacity>
-              <View style={{width: 20}} />
-              <TouchableOpacity onPress={() => webViewRef.current?.injectJavaScript(injectPageNav('next'))} style={styles.navBtn}>
-                 <FontAwesome name="chevron-right" size={24} color="#fff" />
-              </TouchableOpacity>
-          </View>
-
           {loading && (
             <View style={styles.loader}>
                 <ActivityIndicator size="large" color={colors.primary} />
