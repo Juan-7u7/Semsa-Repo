@@ -183,15 +183,15 @@ export default function ModalScreen() {
               style={[
                 styles.iconButton,
                 {
-                  backgroundColor: isFavorito ? colors.primary : colors.background,
+                  backgroundColor: 'transparent',
                 },
               ]}
               activeOpacity={0.7}
             >
               <FontAwesome
                 name={isFavorito ? 'star' : 'star-o'}
-                size={18}
-                color={isFavorito ? '#000000' : colors.text}
+                size={22}
+                color={isFavorito ? '#FFCC00' : colors.text}
               />
             </TouchableOpacity>
           </View>

@@ -1,6 +1,6 @@
 import { Colors, ColorScheme, ThemeColors } from '@/constants/Colors';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { Appearance, Platform, useColorScheme as useDeviceColorScheme } from 'react-native';
+import { Appearance, LayoutAnimation, Platform, UIManager, useColorScheme as useDeviceColorScheme } from 'react-native';
 
 /**
  * Tipo para el contexto del tema
@@ -23,6 +23,11 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
  */
 interface ThemeProviderProps {
   children: ReactNode;
+}
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 /**
@@ -104,6 +109,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   // Alternar entre tema claro y oscuro
   const toggleTheme = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setColorScheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 

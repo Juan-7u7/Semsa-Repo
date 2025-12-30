@@ -1,34 +1,18 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import React from 'react';
-import { Pressable, View } from 'react-native';
-
+import { AnimatedTabBar } from '@/components/AnimatedTabBar';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
-
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
-}
+import { Tabs } from 'expo-router';
+import React from 'react';
 
 function TabLayoutContent() {
-  const { colors, toggleTheme, colorScheme } = useTheme();
+  const { colors } = useTheme();
   const { cantidadFavoritos } = useFavoritos();
 
   return (
     <Tabs
+      tabBar={(props) => <AnimatedTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-        },
         headerStyle: {
           backgroundColor: colors.background,
         },
@@ -41,41 +25,14 @@ function TabLayoutContent() {
         name="index"
         options={{
           title: 'Catálogo',
-          tabBarIcon: ({ color }) => <TabBarIcon name="th-large" color={color} />,
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 15 }}>
-              <Pressable onPress={toggleTheme} style={{ marginRight: 15 }}>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name={colorScheme === 'dark' ? 'sun-o' : 'moon-o'}
-                    size={25}
-                    color={colors.text}
-                    style={{ opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-              <Link href="/help" asChild>
-                <Pressable>
-                  {({ pressed }) => (
-                    <FontAwesome
-                      name="info-circle"
-                      size={25}
-                      color={colors.text}
-                      style={{ opacity: pressed ? 0.5 : 1 }}
-                    />
-                  )}
-                </Pressable>
-              </Link>
-            </View>
-          ),
+          headerShown: false,
         }}
       />
       <Tabs.Screen
         name="two"
         options={{
           title: 'Favoritos',
-          tabBarIcon: ({ color }) => <TabBarIcon name="star" color={color} />,
-          tabBarBadge: cantidadFavoritos > 0 ? cantidadFavoritos : undefined,
+          headerShown: false,
         }}
       />
     </Tabs>

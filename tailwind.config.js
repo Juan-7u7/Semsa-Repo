@@ -7,22 +7,22 @@ module.exports = {
       colors: {
         // Acento Industrial
         primary: {
-          DEFAULT: '#FFB800',
-          light: '#FFC933',
-          dark: '#E6A600',
-          subtle: '#FFF8E6',
+          DEFAULT: '#FFCC00',
+          light: '#FFD700',
+          dark: '#E6B800',
+          subtle: '#FFFBE6',
         },
         // Fondos Premium
         background: {
           DEFAULT: '#FFFFFF',
-          secondary: '#F9FAFB',
-          tertiary: '#F3F4F6',
+          secondary: '#F8F9FA',
+          tertiary: '#F0F4F8',
         },
         // Textos
         text: {
-          DEFAULT: '#111827',
-          secondary: '#6B7280',
-          muted: '#9CA3AF',
+          DEFAULT: '#00335F', // Azul Oscuro
+          secondary: '#005596', // Azul Medio
+          muted: '#64748B',
         },
       },
       spacing: {

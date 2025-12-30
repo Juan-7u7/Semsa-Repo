@@ -1,9 +1,10 @@
-import { Roboto_700Bold } from '@expo-google-fonts/roboto';
+import { Roboto_500Medium_Italic, Roboto_700Bold } from '@expo-google-fonts/roboto';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
@@ -17,6 +18,7 @@ export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     Roboto_700Bold,
+    Roboto_500Medium_Italic,
     ...FontAwesome.font,
   });
 
@@ -38,7 +40,6 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-import { StatusBar } from 'expo-status-bar';
 
 // Componente intermedio para conectar el tema personalizado con la navegación
 function NavigationWrapper() {
@@ -72,8 +73,8 @@ function NavigationWrapper() {
   return (
     <NavigationThemeProvider value={navigationTheme}>
       <StatusBar 
-        style={colorScheme === 'dark' ? 'light' : 'dark'} 
-        backgroundColor={colors.background}
+        style="light" 
+        backgroundColor="#00335F"
         translucent={false} // Evita que se superpongas en algunos casos de Android
       />
       <Stack>

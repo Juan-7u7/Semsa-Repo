@@ -118,18 +118,13 @@ export default function PremiumManualCard({
         <Animated.View style={[styles.favoritoContainer, animatedFavoritoStyle]}>
           <TouchableOpacity
             onPress={handleFavoritoPress}
-            style={[
-              styles.favoritoButton,
-              {
-                backgroundColor: isFavorito ? colors.primary : 'transparent',
-              },
-            ]}
+            style={styles.favoritoButton}
             activeOpacity={0.7}
           >
             <FontAwesome
               name={isFavorito ? 'star' : 'star-o'}
-              size={16}
-              color={isFavorito ? '#000000' : colors.textMuted}
+              size={22}
+              color={isFavorito ? '#FFCC00' : colors.textMuted}
             />
           </TouchableOpacity>
         </Animated.View>
@@ -220,9 +215,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   favoritoButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    padding: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },

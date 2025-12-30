@@ -6,12 +6,14 @@ import type { Manual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function FavoritosScreen() {
   const { colors, isDark, toggleTheme } = useTheme();
   const router = useRouter();
   const { esFavorito } = useFavoritos();
+  const insets = useSafeAreaInsets();
 
   // Obtener manuales favoritos
   const manualesFavoritos = useMemo(() => {
@@ -41,37 +43,12 @@ export default function FavoritosScreen() {
     </View>
   );
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      {/* Título y tema */}
-      <View style={styles.titleRow}>
-        <View style={styles.titleContainer}>
-          <View style={styles.titleWithIcon}>
-            <FontAwesome name="star" size={24} color={colors.primary} />
-            <Text style={[styles.title, { color: colors.text }]}>Favoritos</Text>
-          </View>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {manualesFavoritos.length}{' '}
-            {manualesFavoritos.length === 1 ? 'manual guardado' : 'manuales guardados'}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          onPress={toggleTheme}
-          style={[styles.themeButton, { backgroundColor: colors.backgroundSecondary }]}
-          activeOpacity={0.7}
-        >
-          <FontAwesome
-            name={isDark ? 'sun-o' : 'moon-o'}
-            size={18}
-            color={colors.text}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Estadísticas */}
-      {manualesFavoritos.length > 0 && (
-        <View style={styles.stats}>
+  const renderStats = () => {
+    if (manualesFavoritos.length === 0) return null;
+    
+    return (
+      <View style={styles.statsContainer}>
+        <View style={styles.statsRow}>
           <View
             style={[
               styles.statCard,
@@ -102,12 +79,31 @@ export default function FavoritosScreen() {
             </Text>
           </View>
         </View>
-      )}
-    </View>
-  );
+      </View>
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Blue Header Header */}
+      <View style={[styles.blueHeader, { paddingTop: insets.top + 10 }]}>
+        <View style={styles.headerContent}>
+          <View style={styles.titleSection}>
+            <View style={styles.titleRow}>
+               <FontAwesome name="star" size={24} color="#FFCC00" style={{ marginRight: 10 }} />
+               <Text style={styles.headerTitle}>Favoritos</Text>
+            </View>
+            <Text style={styles.headerSubtitle}>
+              {manualesFavoritos.length}{' '}
+              {manualesFavoritos.length === 1 ? 'manual guardado' : 'manuales guardados'}
+            </Text>
+          </View>
+
+
+        </View>
+      </View>
+
+      {/* Content List */}
       <FlatList
         data={manualesFavoritos}
         keyExtractor={(item) => item.id.toString()}
@@ -118,7 +114,7 @@ export default function FavoritosScreen() {
             index={index}
           />
         )}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={renderStats}
         ListEmptyComponent={renderEmptyState}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -131,47 +127,89 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  listContent: {
+  blueHeader: {
+    backgroundColor: '#00335F',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 24,
+    // Shadows
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 10,
   },
-  header: {
-    paddingTop: 16,
-    marginBottom: 24,
-  },
-  titleRow: {
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginTop: 4,
   },
-  titleContainer: {
+  titleSection: {
     flex: 1,
   },
-  titleWithIcon: {
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  title: {
+  headerTitle: {
     fontSize: 28,
     fontWeight: '700',
+    color: '#FFFFFF',
     letterSpacing: -0.5,
   },
-  subtitle: {
+  headerSubtitle: {
     fontSize: 14,
     fontWeight: '400',
-    marginLeft: 36,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginLeft: 34, // Indent to align with text start (icon width + margin)
   },
-  themeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  // Switch Styles
+  themeSwitch: {
+    width: 68,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  switchTrackIcons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    width: '100%',
+  },
+  switchThumb: {
+    position: 'absolute',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
-  stats: {
+  thumbLeft: { left: 4 },
+  thumbRight: { right: 4 },
+  
+  // List Styles
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    paddingTop: 20, // Space between header and list content
+  },
+  // Stats
+  statsContainer: {
+    marginBottom: 20,
+  },
+  statsRow: {
     flexDirection: 'row',
     gap: 12,
   },
@@ -191,29 +229,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  // Empty State
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
-    paddingHorizontal: 40,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   emptyIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
-    marginBottom: 12,
+    marginBottom: 8,
     textAlign: 'center',
   },
   emptyMessage: {
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
   },
 });
