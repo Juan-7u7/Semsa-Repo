@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
   // List Styles
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 100, // Extra padding for TabBar
     paddingTop: 20, // Space between header and list content
   },
   // Stats

@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 100, // Extra padding for TabBar (60px height + safe area)
   },
   statsContainer: {
     marginBottom: 24,
