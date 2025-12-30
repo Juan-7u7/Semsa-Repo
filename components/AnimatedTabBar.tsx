@@ -2,7 +2,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React, { useEffect } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -43,9 +43,16 @@ export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarP
         styles.container,
         {
           backgroundColor: isDark ? '#000000' : '#FFFFFF',
-          paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 8, // Ajuste para SafeArea
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 8,
           paddingTop: 12,
-          width: '100%', // Ensure full width
+          width: '100%',
+          // Web-specific positioning
+          ...(Platform.OS === 'web' ? {
+            position: 'fixed' as any,
+            bottom: 0,
+            left: 0,
+            right: 0,
+          } : {}),
         },
       ]}
     >
