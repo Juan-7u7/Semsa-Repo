@@ -43,8 +43,9 @@ export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarP
         styles.container,
         {
           backgroundColor: isDark ? '#000000' : '#FFFFFF',
-          paddingBottom: insets.bottom + 8, // Ajuste para SafeArea
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 8, // Ajuste para SafeArea
           paddingTop: 12,
+          width: '100%', // Ensure full width
         },
       ]}
     >
@@ -160,14 +161,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
-    zIndex: 100, // Ensure it's above other content
-    position: 'relative', // For proper stacking context
+    zIndex: 100,
+    position: 'relative',
+    minHeight: 60, // Minimum height for touch targets
+    width: '100%', // Ensure full width
+    alignSelf: 'stretch', // Stretch to container width
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
     height: 50,
-    zIndex: 1, // Ensure tabs are clickable
+    zIndex: 1,
+    flex: 1, // Equal width distribution
   },
   contentContainer: {
     alignItems: 'center',
@@ -175,13 +180,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    userSelect: 'none', // Prevent text selection on web
+    userSelect: 'none',
   },
   indicator: {
     position: 'absolute',
     top: 12,
     height: 50,
     borderRadius: 25,
-    zIndex: 0, // Behind the tabs
+    zIndex: 0,
   },
 });
