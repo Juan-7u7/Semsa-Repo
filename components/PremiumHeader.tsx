@@ -1,6 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { type MarcaManual, type TipoManual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
@@ -25,23 +26,13 @@ export default function PremiumHeader({
   marcaSeleccionada,
   tipoSeleccionado,
 }: PremiumHeaderProps) {
-  const { colors } = useTheme();
+  const router = useRouter();
+  const { colors, isDark, toggleTheme } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
   const marcas: MarcaManual[] = [
-    'Yale',
-    'Jet',
-    'Harrington',
-    'Accolift',
-    'Budgit',
-    'CM',
-    'Cummings',
-    'Demag',
-    'MIT',
-    'R&M',
-    'Shawbox',
-    'Coffing',
-    'Kito',
+    'Yale', 'Jet', 'Harrington', 'Accolift', 'Budgit', 'CM',
+    'Cummings', 'Demag', 'MIT', 'R&M', 'Shawbox', 'Coffing', 'Kito',
   ];
   const tipos = [
     { value: null, label: 'Todos', icon: 'th-large' },
@@ -51,8 +42,31 @@ export default function PremiumHeader({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Título y tema */}
+      {/* Título y Acciones */}
+      <View style={styles.titleRow}>
+        <View style={styles.titleContainer}>
+          <Text style={[styles.titleMain, { color: colors.text }]}>SEMSA</Text>
+          <Text style={[styles.titleSub, { color: colors.text }]}>Repositorio de Manuales</Text>
+        </View>
 
+        <View style={styles.headerActions}>
+           <TouchableOpacity
+              onPress={toggleTheme}
+              style={[styles.iconButton, { backgroundColor: colors.backgroundSecondary }]}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name={isDark ? 'sun-o' : 'moon-o'} size={20} color={colors.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/help')}
+              style={[styles.iconButton, { backgroundColor: colors.backgroundSecondary }]}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="info-circle" size={20} color={colors.text} />
+            </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Barra de búsqueda premium */}
       <View
@@ -165,6 +179,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 20,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  titleContainer: {
+    flex: 1,
+  },
+  titleMain: {
+    fontFamily: 'Roboto_700Bold',
+    fontSize: 18,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  titleSub: {
+    fontFamily: 'Roboto_700Bold',
+    fontSize: 20,
+    letterSpacing: -0.5,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   searchContainer: {

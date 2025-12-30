@@ -1,3 +1,4 @@
+import { Roboto_700Bold } from '@expo-google-fonts/roboto';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -10,22 +11,12 @@ import '../global.css';
 import { FavoritosProvider } from '@/contexts/FavoritosContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
-export {
-    // Catch any errors thrown by the Layout component.
-    ErrorBoundary
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+// ... (existing code)
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Roboto_700Bold,
     ...FontAwesome.font,
   });
 
