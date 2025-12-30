@@ -16,6 +16,18 @@ export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarP
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   
+  // Detect system theme on web as fallback
+  const getBackgroundColor = () => {
+    if (isDark !== undefined) {
+      return isDark ? '#000000' : '#FFFFFF';
+    }
+    // Fallback for initial render on web
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? '#000000' : '#FFFFFF';
+    }
+    return '#FFFFFF'; // Default fallback
+  };
+  
   const totalTabs = state.routes.length;
   // Ancho aproximado de cada tab, considerando un margen horizontal si lo hubiera
   // Aquí asumimos ancho completo dividido
@@ -42,7 +54,7 @@ export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarP
       style={[
         styles.container,
         {
-          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+          backgroundColor: getBackgroundColor(),
           paddingBottom: insets.bottom > 0 ? insets.bottom + 8 : 8,
           paddingTop: 12,
           width: '100%',
