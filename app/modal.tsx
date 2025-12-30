@@ -143,6 +143,48 @@ export default function ModalScreen() {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    setLoading(true);
+    try {
+      const uri = await getPdfUri();
+      if (uri) {
+        const validName = manual?.titulo.replace(/[\/\\?%*:|"<>]/g, '-') || 'documento';
+        const fileName = `${validName}.pdf`;
+
+        if (Platform.OS === 'web') {
+          // En web, descargar directamente
+          const link = document.createElement('a');
+          link.href = uri;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } else {
+          // En nativo, copiar y compartir (mismo comportamiento que compartir)
+          const newPath = `${FileSystem.cacheDirectory}${fileName}`;
+          
+          await FileSystem.copyAsync({
+            from: uri,
+            to: newPath
+          });
+  
+          await shareAsync(newPath, { 
+            dialogTitle: `Descargar: ${manual?.titulo}`,
+            mimeType: 'application/pdf',
+            UTI: 'com.adobe.pdf'
+          });
+        }
+      } else {
+        Alert.alert('Error', 'No se pudo preparar el archivo.');
+      }
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Error', 'Ocurrió un error al descargar.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!manual) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -321,20 +363,36 @@ export default function ModalScreen() {
             </View>
           </View>
 
-          {/* Botón de compartir */}
-          <TouchableOpacity
-            style={[styles.downloadButton, { backgroundColor: colors.primary }]}
-            activeOpacity={0.8}
-            onPress={handleSharePdf}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#000000" />
-            ) : (
-              <FontAwesome name="share-alt" size={20} color="#000000" />
-            )}
-            <Text style={styles.downloadText}>Compartir PDF</Text>
-          </TouchableOpacity>
+          {/* Botones de acción */}
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
+              activeOpacity={0.8}
+              onPress={handleDownloadPdf}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#000000" />
+              ) : (
+                <FontAwesome name="download" size={20} color="#000000" />
+              )}
+              <Text style={styles.actionButtonText}>Descargar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderWidth: 2, borderColor: colors.primary }]}
+              activeOpacity={0.8}
+              onPress={handleSharePdf}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <FontAwesome name="share-alt" size={20} color={colors.primary} />
+              )}
+              <Text style={[styles.actionButtonText, { color: colors.primary }]}>Compartir</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -549,6 +607,25 @@ const styles = StyleSheet.create({
   downloadText: {
     color: '#000000',
     fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  actionButtonText: {
+    color: '#000000',
+    fontSize: 15,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
