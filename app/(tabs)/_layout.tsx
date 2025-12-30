@@ -33,6 +33,7 @@ function TabLayoutContent() {
         options={{
           title: 'Favoritos',
           headerShown: false,
+          tabBarBadge: cantidadFavoritos > 0 ? cantidadFavoritos : undefined,
         }}
       />
     </Tabs>

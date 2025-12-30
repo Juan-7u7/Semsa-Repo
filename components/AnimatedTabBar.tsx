@@ -97,6 +97,9 @@ export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarP
             ? options.title
             : route.name;
 
+        // Extract badge from options
+        const badge = options.tabBarBadge;
+
         const onPress = () => {
           const event = navigation.emit({
             type: 'tabPress',
@@ -116,6 +119,7 @@ export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarP
                 onPress={onPress}
                 icon={iconName}
                 label={label as string}
+                badge={badge}
                 colors={colors}
                 width={tabWidth}
             />
@@ -125,7 +129,7 @@ export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarP
   );
 }
 
-function TabItem({ isFocused, onPress, icon, label, colors, width }: any) {
+function TabItem({ isFocused, onPress, icon, label, badge, colors, width }: any) {
     const scale = useSharedValue(1);
 
     useEffect(() => {
@@ -150,12 +154,19 @@ function TabItem({ isFocused, onPress, icon, label, colors, width }: any) {
             style={[styles.tabItem, { width }]}
         >
             <Animated.View style={[styles.contentContainer, animatedIconStyle]}>
-                <FontAwesome
-                    name={icon}
-                    size={24}
-                    color={isFocused ? colors.primary : colors.textMuted}
-                    style={{ marginBottom: 4 }}
-                />
+                <View style={{ position: 'relative' }}>
+                    <FontAwesome
+                        name={icon}
+                        size={24}
+                        color={isFocused ? colors.primary : colors.textMuted}
+                        style={{ marginBottom: 4 }}
+                    />
+                    {badge != null && badge > 0 && (
+                        <View style={styles.badge}>
+                            <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
+                        </View>
+                    )}
+                </View>
                 <Text
                     style={[
                         styles.label,
@@ -207,5 +218,22 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     zIndex: 0,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    backgroundColor: '#FFCC00',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#000000',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });
