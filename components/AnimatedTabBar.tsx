@@ -155,16 +155,19 @@ function TabItem({ isFocused, onPress, icon, label, colors, width }: any) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    elevation: 25, // Increased elevation
+    elevation: 25,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 }, // Higher shadow
+    shadowOffset: { width: 0, height: -10 },
     shadowOpacity: 0.1,
-    shadowRadius: 20, // softer spread
+    shadowRadius: 20,
+    zIndex: 100, // Ensure it's above other content
+    position: 'relative', // For proper stacking context
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
     height: 50,
+    zIndex: 1, // Ensure tabs are clickable
   },
   contentContainer: {
     alignItems: 'center',
@@ -172,11 +175,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
+    userSelect: 'none', // Prevent text selection on web
   },
   indicator: {
     position: 'absolute',
     top: 12,
     height: 50,
     borderRadius: 25,
+    zIndex: 0, // Behind the tabs
   },
 });
