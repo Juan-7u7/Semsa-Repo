@@ -1,6 +1,6 @@
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { type MarcaManual, type TipoManual } from '@/types/manual';
+import { type TipoManual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
@@ -10,9 +10,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 interface PremiumHeaderProps {
   onSearch: (query: string) => void;
   searchQuery?: string;
-  onMarcaFilter?: (marca: MarcaManual | null) => void;
+  onMarcaFilter?: (marca: Marca | null) => void;
   onTipoFilter?: (tipo: TipoManual | null) => void;
-  marcaSeleccionada?: MarcaManual | null;
+  marcaSeleccionada?: Marca | null;
   tipoSeleccionado?: TipoManual | null;
 }
 
@@ -129,7 +129,7 @@ export default function PremiumHeader({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterScroll}
           >
-            {marcas.map((marca) => {
+            {MARCAS.map((marca: Marca) => {
               const isSelected = marcaSeleccionada === marca;
               return (
                 <TouchableOpacity

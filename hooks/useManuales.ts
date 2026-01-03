@@ -1,10 +1,10 @@
 import { MANUALES } from '@/constants/Manuales';
-import { MarcaManual, TipoManual } from '@/types/manual';
+import { type Marca, type TipoManual } from '@/types/manual';
 import { useMemo, useState } from 'react';
 
 export const useManuales = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMarca, setSelectedMarca] = useState<MarcaManual | null>(null);
+  const [selectedMarca, setSelectedMarca] = useState<Marca | null>(null);
   const [selectedTipo, setSelectedTipo] = useState<TipoManual | null>(null);
 
   const filteredManuales = useMemo(() => {

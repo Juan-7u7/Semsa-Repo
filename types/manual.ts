@@ -17,7 +17,7 @@ export type TipoManual = 'Eléctrico' | 'Manual';
 export interface Manual {
   id: number;
   titulo: string;
-  marca: MarcaManual;
+  marca: Marca;
   tipo: TipoManual;
   /** @deprecated Usar 'archivo' en su lugar */
   url_falsa_pdf: string;
@@ -29,6 +29,6 @@ export interface Manual {
 
 export interface EstadisticasManuales {
   total: number;
-  porMarca: Record<MarcaManual, number>;
+  porMarca: Record<Marca, number>;
   porTipo: Record<TipoManual, number>;
 }
