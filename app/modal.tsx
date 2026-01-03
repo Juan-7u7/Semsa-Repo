@@ -363,36 +363,6 @@ export default function ModalScreen() {
             </View>
           </View>
 
-          {/* Botones de acción */}
-          <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.primary }]}
-              activeOpacity={0.8}
-              onPress={handleDownloadPdf}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#000000" />
-              ) : (
-                <FontAwesome name="download" size={20} color="#000000" />
-              )}
-              <Text style={styles.actionButtonText}>Descargar</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, { backgroundColor: colors.backgroundSecondary, borderWidth: 2, borderColor: colors.primary }]}
-              activeOpacity={0.8}
-              onPress={handleSharePdf}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <FontAwesome name="share-alt" size={20} color={colors.primary} />
-              )}
-              <Text style={[styles.actionButtonText, { color: colors.primary }]}>Compartir</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
 
