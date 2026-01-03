@@ -22,7 +22,7 @@ export default function HelpScreen() {
     {
       icon: 'filter',
       title: 'Filtrar por Marca',
-      description: 'Selecciona Yale, Jet o Harrington para ver solo manuales de esa marca.',
+      description: 'Selecciona Yale, Harrington o Accolift para ver solo manuales de esa marca.',
       color: '#8B5CF6',
     },
     {

@@ -1,6 +1,5 @@
-export type MarcaManual = 
+export type Marca = 
   | 'Yale' 
-  | 'Jet' 
   | 'Harrington' 
   | 'Accolift' 
   | 'Budgit' 

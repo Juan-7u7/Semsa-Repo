@@ -30,7 +30,6 @@ export const useManuales = () => {
       filtrados: filteredManuales.length,
       porMarca: {
         Yale: MANUALES.filter(m => m.marca === 'Yale').length,
-        Jet: MANUALES.filter(m => m.marca === 'Jet').length,
         Harrington: MANUALES.filter(m => m.marca === 'Harrington').length,
         Accolift: MANUALES.filter(m => m.marca === 'Accolift').length,
         Budgit: MANUALES.filter(m => m.marca === 'Budgit').length,
@@ -42,7 +41,7 @@ export const useManuales = () => {
         Shawbox: MANUALES.filter(m => m.marca === 'Shawbox').length,
         Coffing: MANUALES.filter(m => m.marca === 'Coffing').length,
         Kito: MANUALES.filter(m => m.marca === 'Kito').length,
-      }
+      },
     };
   }, [filteredManuales]);
 

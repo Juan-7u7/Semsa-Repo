@@ -30,7 +30,6 @@ export default function ModalScreen() {
   const getMarcaColor = (marca: string) => {
     const colores: Record<string, string> = {
       Yale: '#DC2626',
-      Jet: '#2563EB',
       Harrington: '#059669',
       Accolift: '#E11D48',
       Budgit: '#D97706',

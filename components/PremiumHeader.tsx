@@ -33,10 +33,10 @@ export default function PremiumHeader({
   const insets = useSafeAreaInsets();
   const [isFocused, setIsFocused] = useState(false);
 
-  const marcas: MarcaManual[] = [
-    'Yale', 'Jet', 'Harrington', 'Accolift', 'Budgit', 'CM',
-    'Cummings', 'Demag', 'MIT', 'R&M', 'Shawbox', 'Coffing', 'Kito',
-  ];
+  const MARCAS = [
+    'Yale', 'Harrington', 'Accolift', 'Budgit', 'CM',
+    'Cummings', 'Demag', 'MIT', 'R&M', 'Shawbox', 'Coffing', 'Kito'
+  ] as const;
   const tipos = [
     { value: null, label: 'Todos', icon: 'th-large' },
     { value: 'Eléctrico' as TipoManual, label: 'Eléctrico', icon: 'bolt' },
