@@ -1,6 +1,6 @@
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { type TipoManual } from '@/types/manual';
+import { type Marca, type TipoManual } from '@/types/manual';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';

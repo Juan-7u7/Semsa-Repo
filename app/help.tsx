@@ -38,9 +38,9 @@ export default function HelpScreen() {
       color: '#FFB800',
     },
     {
-      icon: 'download',
-      title: 'Descargar PDF',
-      description: 'Toca un manual para ver sus detalles y descargarlo en formato PDF.',
+      icon: 'file-pdf-o',
+      title: 'Ver Manuales',
+      description: 'Toca un manual para ver sus detalles y leerlo en formato PDF.',
       color: '#10B981',
     },
     {
