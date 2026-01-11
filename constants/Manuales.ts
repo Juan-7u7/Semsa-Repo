@@ -1,5 +1,37 @@
+/**
+ * ============================================================================
+ * BASE DE DATOS DE MANUALES
+ * ============================================================================
+ * Array constante con todos los manuales de equipos industriales disponibles.
+ * 
+ * ESTADÍSTICAS DEL CATÁLOGO:
+ * - Total de manuales: 26
+ * - Manuales eléctricos: 18
+ * - Manuales manuales: 8
+ * - Marcas disponibles: 11 (Yale, Harrington, Accolift, Budgit, CM, 
+ *   Cummings, Demag, MIT, R&M, Shawbox, Coffing, Kito)
+ * 
+ * ESTRUCTURA DE CADA MANUAL:
+ * - id: Identificador único
+ * - titulo: Nombre completo del manual
+ * - marca: Marca del equipo (tipado con enum Marca)
+ * - tipo: "Eléctrico" o "Manual"
+ * - archivo: Referencia al PDF usando require()
+ * - tamano: Tamaño del archivo (ej: "2.1 MB")
+ * - paginas: Número de páginas (ej: "24")
+ * 
+ * UBICACIÓN DE PDFs:
+ * - Eléctricos: assets/documents/electricos/
+ * - Manuales: assets/documents/manuales/
+ * ============================================================================
+ */
+
 import { Manual } from '@/types/manual';
 
+/**
+ * ARRAY PRINCIPAL DE MANUALES
+ * Exportado como constante inmutable
+ */
 export const MANUALES: Manual[] = [
   // --- ELÉCTRICOS ---
   {

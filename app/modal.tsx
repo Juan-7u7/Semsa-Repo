@@ -1,3 +1,31 @@
+/**
+ * ============================================================================
+ * MODAL DE DETALLES DEL MANUAL
+ * ============================================================================
+ * Pantalla modal que presenta información completa de cada manual:
+ * 
+ * INFORMACIÓN MOSTRADA:
+ * - Portada generada dinámicamente con logo de marca
+ * - Título completo del manual
+ * - Marca con código de color único
+ * - Tipo (Eléctrico/Manual)
+ * - Formato del archivo (PDF)
+ * - Tamaño del archivo
+ * - Número de páginas
+ * 
+ * ACCIONES DISPONIBLES:
+ * - Marcar/desmarcar como favorito
+ * - Abrir visor PDF integrado
+ * - Cerrar modal
+ * 
+ * CARACTERÍSTICAS VISUALES:
+ * - Diseño premium con degradados
+ * - Glassmorphism en tarjetas
+ * - Animaciones suaves
+ * - Adaptación a tema claro/oscuro
+ * ============================================================================
+ */
+
 import { MANUALES } from '@/constants/Manuales';
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -11,8 +39,8 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 /**
- * Modal Premium de Detalle del Manual
- * Diseño limpio y profesional con glassmorphism
+ * COMPONENTE PRINCIPAL DEL MODAL
+ * Recibe ID del manual por parámetro de navegación
  */
 export default function ModalScreen() {
   const { id } = useLocalSearchParams();

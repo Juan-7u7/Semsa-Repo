@@ -1,3 +1,26 @@
+/**
+ * ============================================================================
+ * PREMIUM MANUAL CARD - TARJETA DE MANUAL CON ANIMACIONES
+ * ============================================================================
+ * Componente reutilizable que representa cada manual en la lista:
+ * 
+ * ELEMENTOS VISUALES:
+ * - Logo de marca con código de color único
+ * - Título del manual (truncado si es largo)
+ * - Badges de tipo (Eléctrico/Manual) y marca
+ * - Botón de favorito con estrella animada
+ * 
+ * ANIMACIONES:
+ * - Entrada escalonada con spring animation (basada en index)
+ * - Efecto de escala al presionar (feedback táctil)
+ * - Animación de favorito al tocar estrella
+ * 
+ * INTERACCIONES:
+ * - Tap en tarjeta: Navega al modal de detalles
+ * - Tap en estrella: Toggle favorito
+ * ============================================================================
+ */
+
 import { useFavoritos } from '@/contexts/FavoritosContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { type Manual } from '@/types/manual';
@@ -11,10 +34,14 @@ import Animated, {
     withTiming,
 } from 'react-native-reanimated';
 
+/**
+ * PROPS DEL COMPONENTE
+ * Define el manual a mostrar, callback y posición para animación
+ */
 interface PremiumManualCardProps {
   manual: Manual;
   onPress?: () => void;
-  index?: number;
+  index?: number;  // Usado para animación de entrada escalonada
 }
 
 /**

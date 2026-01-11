@@ -1,3 +1,24 @@
+/**
+ * ============================================================================
+ * PANTALLA PRINCIPAL - CATÁLOGO DE MANUALES
+ * ============================================================================
+ * Vista principal de la aplicación que muestra:
+ * 
+ * COMPONENTES:
+ * - PremiumHeader: Búsqueda y filtros
+ * - FlatList optimizada: Lista de manuales con virtualización
+ * - PremiumManualCard: Tarjetas individuales con animación
+ * - EmptyState: Estado vacío cuando no hay resultados
+ * 
+ * FUNCIONALIDADES:
+ * - Búsqueda en tiempo real por título
+ * - Filtros por marca (11 opciones)
+ * - Filtro por tipo (Eléctrico/Manual)
+ * - Estadísticas dinámicas del catálogo
+ * - Navegación a detalles del manual
+ * ============================================================================
+ */
+
 import EmptyState from '@/components/EmptyState';
 import PremiumHeader from '@/components/PremiumHeader';
 import PremiumManualCard from '@/components/PremiumManualCard';
@@ -9,6 +30,10 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
+/**
+ * COMPONENTE PRINCIPAL DEL CATÁLOGO
+ * Orquesta la búsqueda, filtros y visualización de manuales
+ */
 export default function CatalogoScreen() {
   const { colors } = useTheme();
   const router = useRouter();

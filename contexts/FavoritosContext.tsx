@@ -1,16 +1,40 @@
+/**
+ * ============================================================================
+ * FAVORITOS CONTEXT - GESTOR DE MANUALES FAVORITOS
+ * ============================================================================
+ * Este contexto maneja la lista de manuales favoritos del usuario:
+ * 
+ * FUNCIONALIDADES:
+ * - Agregar/eliminar manuales de favoritos
+ * - Toggle rápido (agregar si no existe, eliminar si existe)
+ * - Verificar si un manual es favorito
+ * - Contar total de favoritos (para badge en tab bar)
+ * 
+ * PERSISTENCIA:
+ * - Usa AsyncStorage para guardar favoritos localmente
+ * - Los favoritos persisten entre sesiones de la app
+ * - Carga automática al iniciar la app
+ * 
+ * SINCRONIZACIÓN:
+ * - Estado global accesible desde toda la app
+ * - Actualización en tiempo real del badge del tab bar
+ * ============================================================================
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 /**
- * Tipo para el contexto de favoritos
+ * INTERFACE DEL CONTEXTO
+ * Define métodos para gestionar favoritos
  */
 interface FavoritosContextType {
-  favoritos: number[];
-  agregarFavorito: (id: number) => void;
-  eliminarFavorito: (id: number) => void;
-  toggleFavorito: (id: number) => void;
-  esFavorito: (id: number) => boolean;
-  cantidadFavoritos: number;
+  favoritos: number[];                    // Array de IDs de manuales favoritos
+  agregarFavorito: (id: number) => void;  // Agregar manual a favoritos
+  eliminarFavorito: (id: number) => void; // Quitar manual de favoritos
+  toggleFavorito: (id: number) => void;   // Toggle: agregar/quitar
+  esFavorito: (id: number) => boolean;    // Verificar si es favorito
+  cantidadFavoritos: number;              // Total de favoritos (para badge)
 }
 
 /**
