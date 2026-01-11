@@ -1,16 +1,30 @@
+/**
+ * ============================================================================
+ * THEME CONTEXT - GESTOR DE TEMA GLOBAL
+ * ============================================================================
+ * Este contexto maneja:
+ * - Estado del tema actual (light/dark)
+ * - Detección automática del tema del sistema
+ * - Toggle manual entre temas
+ * - Sincronización con React Navigation
+ * - Animaciones suaves al cambiar de tema (LayoutAnimation)
+ * ============================================================================
+ */
+
 import { Colors, ColorScheme, ThemeColors } from '@/constants/Colors';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { Appearance, LayoutAnimation, Platform, UIManager, useColorScheme as useDeviceColorScheme } from 'react-native';
 
 /**
- * Tipo para el contexto del tema
+ * INTERFACE DEL CONTEXTO
+ * Define la estructura del contexto del tema
  */
 interface ThemeContextType {
-  colorScheme: ColorScheme;
-  colors: ThemeColors;
-  toggleTheme: () => void;
-  setTheme: (scheme: ColorScheme) => void;
-  isDark: boolean;
+  colorScheme: ColorScheme;  // 'light' | 'dark'
+  colors: ThemeColors;        // Paleta de colores actual
+  toggleTheme: () => void;    // Función para alternar tema
+  setTheme: (scheme: ColorScheme) => void;  // Función para setear tema específico
+  isDark: boolean;            // Helper booleano para saber si es dark mode
 }
 
 /**

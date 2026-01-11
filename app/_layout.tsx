@@ -1,3 +1,15 @@
+/**
+ * ============================================================================
+ * ROOT LAYOUT - PUNTO DE ENTRADA DE LA APLICACIÓN
+ * ============================================================================
+ * Este archivo es el componente raíz que:
+ * - Configura los providers globales (Tema, Favoritos)
+ * - Carga las fuentes necesarias
+ * - Define la estructura de navegación base
+ * - Sincroniza temas con React Navigation
+ * ============================================================================
+ */
+
 import { Roboto_500Medium_Italic, Roboto_700Bold } from '@expo-google-fonts/roboto';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
@@ -12,8 +24,15 @@ import '../global.css';
 import { FavoritosProvider } from '@/contexts/FavoritosContext';
 import { ThemeProvider, useTheme } from '@/contexts/ThemeContext';
 
-// ... (existing code)
+// Prevenir que el splash screen se oculte automáticamente
+SplashScreen.preventAutoHideAsync();
 
+/**
+ * COMPONENTE PRINCIPAL DE LA APP
+ * - Carga las fuentes (Roboto, SpaceMono, FontAwesome)
+ * - Maneja errores de carga
+ * - Oculta el splash screen cuando todo está listo
+ */
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -39,6 +58,12 @@ export default function RootLayout() {
 
   return <RootLayoutNav />;
 }
+
+/**
+ * WRAPPER DE NAVEGACIÓN
+ * - Envuelve la app con ThemeProvider y FavoritosProvider
+ * - Pasa el contexto de tema al componente interno
+ */
 
 
 // Componente intermedio para conectar el tema personalizado con la navegación

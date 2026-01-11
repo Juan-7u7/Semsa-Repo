@@ -1,3 +1,20 @@
+/**
+ * ============================================================================
+ * PREMIUM HEADER - CABECERA PRINCIPAL CON BRANDING SEMSA
+ * ============================================================================
+ * Componente de header dividido en dos niveles:
+ * 
+ * NIVEL SUPERIOR (Azul #00335F):
+ * - Branding corporativo SEMSA
+ * - Switch de tema oscuro/claro personalizado
+ * - Botón de información/ayuda
+ * 
+ * NIVEL INFERIOR (Adaptativo):
+ * - Barra de búsqueda con foco animado
+ * - Filtros horizontales por marca (11 opciones)
+ * - Filtro por tipo (Eléctrico/Manual)
+ * ============================================================================
+ */
 
 import { useTheme } from '@/contexts/ThemeContext';
 import { type Marca, type TipoManual } from '@/types/manual';
@@ -7,6 +24,10 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+/** 
+ * PROPS DEL COMPONENTE
+ * Define callbacks para búsqueda y filtros
+ */
 interface PremiumHeaderProps {
   onSearch: (query: string) => void;
   searchQuery?: string;

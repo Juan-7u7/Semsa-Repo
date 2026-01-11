@@ -1,3 +1,19 @@
+/**
+ * ============================================================================
+ * ANIMATED TAB BAR - BARRA DE NAVEGACIÓN PERSONALIZADA
+ * ============================================================================
+ * Tab bar inferior con animaciones premium:
+ * 
+ * CARACTERÍSTICAS:
+ * - Indicador deslizante animado ("píldora") con Reanimated
+ * - Iconos con efecto de rebote (spring animation) al seleccionar
+ * - Badge de contador de favoritos
+ * - Adaptación de colores según tema (negro puro en dark, blanco en light)
+ * - Posicionamiento fijo en web para visibilidad constante
+ * - Detección automática del tema del sistema como fallback
+ * ============================================================================
+ */
+
 import { useTheme } from '@/contexts/ThemeContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
@@ -12,6 +28,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/**
+ * COMPONENTE PRINCIPAL DEL TAB BAR
+ * Recibe props de React Navigation y renderiza tabs personalizados
+ */
 export function AnimatedTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
